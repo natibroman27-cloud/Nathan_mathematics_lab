@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nathan’s Mathematics Lab</title>
+<style>
+:root{--bg:#0e1522;--panel:#151f31;--line:#26344d;--ink:#e6ebf3;--mute:#93a1b8;--amber:#f0b84d;--teal:#58d1c4;--red:#ef6f6c;--green:#6fcf8e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.m,h1,h2,h3{font-family:Cambria,"Palatino Linotype",Georgia,serif}
+nav{position:sticky;top:0;z-index:5;display:flex;gap:4px;overflow-x:auto;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 14px}
+nav button{background:none;border:0;color:var(--mute);padding:8px 14px;border-radius:6px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--bg);background:var(--amber)}
+nav b{font-family:Cambria,Georgia,serif;color:var(--amber);padding:8px 14px 8px 0;white-space:nowrap}
+main{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:2.2rem;line-height:1.15;margin:.2em 0 .3em}h2{font-size:1.5rem;margin:1.6em 0 .4em;color:var(--amber)}h3{margin:1em 0 .3em}
+p{max-width:68ch}.mute{color:var(--mute)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:var(--teal)}
+button.b{background:var(--amber);color:#1a1405;border:0;border-radius:6px;padding:9px 16px;font:600 .95rem inherit;cursor:pointer}
+button.g{background:none;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+button.locked{opacity:.45}
+.mx{display:inline-grid;gap:4px;padding:2px 12px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:8px;margin:6px}
+.mx input,.mx span{width:56px;height:38px;text-align:center;background:#0b111c;border:1px solid var(--line);color:var(--ink);border-radius:4px;font:1rem Cambria,Georgia,serif}
+.mx span{display:flex;align-items:center;justify-content:center;border-color:transparent;background:none}
+.mx span.hl{background:#f0b84d33;color:var(--amber)}.mx span.hl2{background:#58d1c433;color:var(--teal)}
+.mx input.sel{border-color:var(--amber);background:#f0b84d22}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tag{display:inline-block;border:1px solid var(--teal);color:var(--teal);border-radius:99px;padding:1px 10px;font-size:.85rem;margin:2px}
+.big{font-size:1.15rem;color:var(--amber)}
+.err{color:var(--red)}.ok{color:var(--green)}
+input[type=text],input[type=number].n,textarea,select{background:#0b111c;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:8px;font:inherit}
+textarea{width:100%;min-height:80px}
+label.o{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:6px;margin:6px 0;cursor:pointer}
+label.o:has(input:checked){border-color:var(--amber)}
+.step{font-family:Cambria,Georgia,serif;font-size:1.05rem;color:var(--ink);background:#0b111c;border-radius:6px;padding:8px 12px;margin:6px 0}
+.lbl{color:var(--teal);font-weight:600}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .5s}}
+</style></head><body>
+<nav id="nav"></nav><main id="v"></main>
+<script>
+"use strict";
+const $=(s,e=document)=>e.querySelector(s);
+const KEY="nathans-math-lab";
+let S={done:{},notes:"",mist:[],ans:{},rec:{},mins:{},asm:{}};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const today=()=>new Date().toISOString().slice(0,10);
+const TABS=[["home","Dashboard"],["l1","Lesson 1: What is a matrix?"],["l2","Lesson 2: Matrix operations"],["l3","Lesson 3: Determinants"],["l4","Lesson 4: Inverse matrices"],["l5","Lesson 5: Systems of equations"],["l6","Lesson 6: Transformations & eigenvalues"],["c1","Calculus 1: Functions"],["c2","Calculus 2: Limits"],["c3","Calculus 3: Differentiation"],["c4","Calculus 4: Applications"],["c5","Calculus 5: Integration"],["c6","Calculus 6: Series, DEs, multivariable"],["asm","Assessments"],["lib","Formulas & glossary"],["lab","Matrix lab"],["rev","Review"],["notes","Notes"]];
+let tab="home";
+function nav(){$("#nav").innerHTML='<b>Nathan’s Math Lab</b>'+TABS.map(t=>`<button class="${t[0]==tab?"on":""}" onclick="go('${t[0]}')">${t[1]}</button>`).join("")}
+function go(t){tab=t;nav();({home,l1,l2,l3,l4,l5,l6,c1,c2,c3,c4,c5,c6,asm,lib,lab,rev,notes})[t]();scrollTo(0,0)}
+
+/* ---------- matrix helpers ---------- */
+function Ed(el,r,c,init,opts={}){ // editable matrix
+  const o={r,c,v:[]};
+  function draw(){
+    el.innerHTML="";
+    const g=document.createElement("div");g.className="mx";g.style.gridTemplateColumns=`repeat(${o.c},auto)`;
+    for(let i=0;i<o.r;i++)for(let j=0;j<o.c;j++){
+      const inp=document.createElement("input");inp.type="text";inp.inputMode="decimal";inp.setAttribute("aria-label",`row ${i+1} column ${j+1}`);
+      inp.value=(o.v[i]&&o.v[i][j]!==undefined)?o.v[i][j]:0;
+      inp.oninput=()=>{(o.v[i]=o.v[i]||[])[j]=inp.value;opts.on&&opts.on(i,j)};
+      inp.onfocus=()=>{opts.sel&&opts.sel(i,j)};
+      (o.v[i]=o.v[i]||[])[j]=inp.value;g.append(inp)}
+    el.append(g);opts.on&&opts.on()}
+  o.resize=(r2,c2)=>{o.r=r2;o.c=c2;draw()};
+  o.get=()=>{const m=[];for(let i=0;i<o.r;i++){m[i]=[];for(let j=0;j<o.c;j++){const t=String(o.v[i][j]).trim().replace(",",".");const x=Number(t);if(t===""||!isFinite(x))return{err:`Entry in row ${i+1}, column ${j+1} (“${t}”) is not a number.`};m[i][j]=x}}return{m}};
+  if(init)o.v=init;draw();return o}
+const fmt=x=>Number.isInteger(x)?String(x):String(+x.toFixed(4));
+function show(m,hl){ // static matrix html
+  return `<div class="mx" style="grid-template-columns:repeat(${m[0].length},auto)">`+m.map((r,i)=>r.map((x,j)=>`<span class="${hl&&hl(i,j)||""}">${fmt(x)}</span>`).join("")).join("")+`</div>`}
+function det(m){const n=m.length;if(n==1)return m[0][0];if(n==2)return m[0][0]*m[1][1]-m[0][1]*m[1][0];let d=0;for(let j=0;j<n;j++)d+=(j%2?-1:1)*m[0][j]*det(m.slice(1).map(r=>r.filter((_,k)=>k!=j)));return d}
+function classify(m){const r=m.length,c=m[0].length,t=[];const all=(f)=>m.every((row,i)=>row.every((x,j)=>f(x,i,j)));
+  t.push(`order ${r}×${c}`);t.push(`${r*c} entries`);
+  if(r==1&&c==1)t.push("single entry");else if(r==1)t.push("row matrix");else if(c==1)t.push("column matrix");
+  if(all(x=>x==0))t.push("zero matrix");
+  if(r==c){t.push("square");
+    if(all((x,i,j)=>i==j?x==1:x==0))t.push("identity matrix");
+    if(all((x,i,j)=>i==j||x==0))t.push("diagonal");
+    if(r>1&&all((x,i,j)=>i<=j||x==0))t.push("upper triangular");
+    if(r>1&&all((x,i,j)=>i>=j||x==0))t.push("lower triangular");
+    if(all((x,i,j)=>x==m[j][i])&&r>1)t.push("symmetric")}
+  return t}
+
+/* ---------- Dashboard ---------- */
+let timer=null,left=1800;
+function home(){
+  const tot=1,dn=Object.keys(S.done).length,mt=S.mins[today()]||0;
+  $("#v").innerHTML=`<h1>A laboratory for thinking in matrices and change.</h1>
+  <p class="mute">Two tracks, built one lesson at a time. Matrices come first. Every lesson starts from the problem a matrix was invented to solve, and ends with questions you answer before you see any solutions.</p>
+  <div class="grid">
+   <div class="card"><h3>Track A · Matrices and linear algebra</h3><div class="bar"><i style="width:${dn/6*100}%"></i></div>
+    <p class="mute">All six matrix modules are open. Finish them and the calculus track is next.</p>
+    <div class="row"><button class="b" onclick="go('l1')">${S.done.l1?"Revisit lesson 1":"Start lesson 1"}</button><button class="b" onclick="go('l2')">${S.done.l2?"Revisit lesson 2":"Start lesson 2"}</button><button class="b" onclick="go('l3')">${S.done.l3?"Revisit lesson 3":"Start lesson 3"}</button><button class="b" onclick="go('l4')">${S.done.l4?"Revisit lesson 4":"Start lesson 4"}</button><button class="b" onclick="go('l5')">${S.done.l5?"Revisit lesson 5":"Start lesson 5"}</button><button class="b" onclick="go('l6')">${S.done.l6?"Revisit lesson 6":"Start lesson 6"}</button></div></div>
+   <div class="card"><h3>Track B · Calculus</h3><div class="bar"><i style="width:${(S.done.c1?16:0)+(S.done.c2?17:0)+(S.done.c3?17:0)+(S.done.c4?17:0)+(S.done.c5?17:0)+(S.done.c6?16:0)}%"></i></div>
+    <p class="mute">All six modules are built, from functions to multivariable calculus.</p><button class="b" onclick="go('c1')">${S.done.c1?"Revisit module 1":"Start module 1"}</button><button class="b" onclick="go('c2')">${S.done.c2?"Revisit module 2":"Start module 2"}</button><button class="b" onclick="go('c3')">${S.done.c3?"Revisit module 3":"Start module 3"}</button><button class="b" onclick="go('c4')">${S.done.c4?"Revisit module 4":"Start module 4"}</button><button class="b" onclick="go('c5')">${S.done.c5?"Revisit module 5":"Start module 5"}</button><button class="b" onclick="go('c6')">${S.done.c6?"Revisit module 6":"Start module 6"}</button></div></div>
+  </div>
+  <div class="card"><h3>Today’s 30 minutes</h3>
+   <div class="big m" id="clk">30:00</div><div class="row"><button class="b" id="tb" onclick="tgl()">Start session</button><button class="g" onclick="rst()">Reset clock</button></div>
+   <p class="mute">Logged today: <span id="mn">${mt}</span> min. A good session: 5 min read, 10 min experiment, 15 min practice and recall.</p></div>
+  <div class="card"><h3>Mistakes to revisit</h3><p class="mute">${S.mist.length?S.mist.length+" question(s) waiting in Review.":"None yet. Mistakes are collected here so you can revise exactly what slipped."}</p></div>
+  <div class="card"><h3>Study tools</h3><div class="row"><button class="b" onclick="go('asm')">Module assessments</button><button class="g" onclick="go('lib')">Formulas &amp; glossary</button><button class="g" onclick="go('lab')">Matrix lab</button><button class="g" onclick="go('rev')">Review mistakes</button></div><p class="mute">Suggested 30 minutes: 5 recall (write what you remember), 15 lesson or experiment, 10 practice. Finish each module with its assessment.</p></div><div class="card"><h3>Settings</h3><button class="g" onclick="wipe()">Reset all progress</button></div>`;
+  paint()}
+function paint(){const e=$("#clk");if(e)e.textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0")}
+function tgl(){if(timer){clearInterval(timer);timer=null;$("#tb")&&($("#tb").textContent="Resume");return}
+  $("#tb").textContent="Pause";timer=setInterval(()=>{left--;if(left%60==0){S.mins[today()]=(S.mins[today()]||0)+1;save();$("#mn")&&($("#mn").textContent=S.mins[today()])}paint();if(left<=0){clearInterval(timer);timer=null}},1000)}
+function rst(){clearInterval(timer);timer=null;left=1800;$("#tb").textContent="Start session";paint()}
+function wipe(){if(confirm("Delete all progress, notes and mistakes on this device? This cannot be undone.")){localStorage.removeItem(KEY);S={done:{},notes:"",mist:[],ans:{},rec:{},mins:{},asm:{}};go("home")}}
+
+/* ---------- Lesson 1 ---------- */
+const Q=[
+ {id:"q1",lv:1,t:"mc",q:"A matrix has order 3×4. Which statement is correct?",o:["3 columns and 4 rows","3 rows and 4 columns, 12 entries","7 entries","It must be square"],a:1,h:"Order is always rows × columns, in that order.",e:"Order m×n means m rows and n columns, so 3×4 has 3·4 = 12 entries."},
+ {id:"q2",lv:2,t:"num",q:"For A = [[2, 5, 1],[0, 7, 3]], find a₂₃ (row 2, column 3).",a:3,h:"First index is the row. Count down to row 2, then across to column 3.",e:"Row 2 is (0, 7, 3). Its third entry is 3."},
+ {id:"q3",lv:2,t:"num",q:"A 3×3 matrix has a_ij = i + j when i ≥ j, otherwise 0. Find the sum of all its entries.",a:21,h:"Write out the 3×3 grid. Only the diagonal and below are non-zero.",e:"Entries: row1: 2,0,0 · row2: 3,4,0 · row3: 4,5,6. Sum = 2+3+4+4+5+6 = 24? Check: 2+3+4=9, +4+5+6=15, total 24."},
+ {id:"q4",lv:1,t:"mc",q:"Are [[1,2],[3,4]] and [[1,3],[2,4]] equal matrices?",o:["Yes, same numbers","No, equal matrices need every matching position equal","Yes, same order","Only if multiplied"],a:1,h:"Equality compares position by position, not the collection of numbers.",e:"Entry a₁₂ is 2 in the first matrix and 3 in the second, so they differ. Position matters."},
+ {id:"q5",lv:3,t:"num",q:"How many different 2×2 matrices can you build if every entry must be 0 or 1?",a:16,h:"Each entry is an independent choice with 2 options. How many entries are there?",e:"4 entries, 2 choices each: 2·2·2·2 = 16."}
+];
+Q[2].a=24;Q[2].e="Entries: row 1: 2, 0, 0 · row 2: 3, 4, 0 · row 3: 4, 5, 6. Sum = 2+0+0+3+4+0+4+5+6 = 24.";
+let E1=null;
+function l1(){
+  E1=null;
+  $("#v").innerHTML=`<p class="mute">Track A · Module 1 · Lesson 1</p><h1>What exactly is a matrix, and why do we need one?</h1>
+  <h2>1 · The big idea</h2><p>A matrix is a rectangular table of numbers that we treat as <em>one single object</em>. That last part is the whole point: a shop’s sales for a week, the pixels of a photo, the positions of a 3D model — each is a pile of numbers, and a matrix lets us carry the whole pile around, name it, and do arithmetic on all of it at once.</p>
+  <h2>2 · Why it exists</h2><p>In the 1800s, Cayley and Sylvester studied systems with many unknowns at once, like <span class="m">2x + 3y = 8</span> and <span class="m">x − y = 1</span>. Writing the same coefficients again and again was wasteful, and they noticed the coefficients themselves followed their own rules. Pull the numbers out, keep their positions, and a new object appears.</p>
+  <h2>3 · Visual intuition</h2><p>Think of a spreadsheet. Three shops sell three drinks. The table of units sold is a matrix: <b>rows are shops, columns are drinks</b>. Position carries meaning.</p>
+  <div class="card" style="text-align:center">${show([[12,8,5],[7,15,9],[10,6,14]],(i,j)=>i==1&&j==2?"hl":"")}<div class="mute">Shop 2 sold 9 of drink 3 (highlighted).</div></div>
+  <h2>4 · Notation</h2><p>We name a matrix with a capital letter, <span class="m">A</span>. If it has <span class="m">m</span> rows and <span class="m">n</span> columns, its <b>order</b> is <span class="m">m × n</span> (rows first). The entry in row <span class="m">i</span>, column <span class="m">j</span> is <span class="m">a<sub>ij</sub></span>. So <span class="m">a<sub>23</sub></span> is “row 2, column 3”, never the other way round.</p>
+  <h2>5 · Derivation: how many entries?</h2><p>Each of the <span class="m">m</span> rows holds <span class="m">n</span> entries, so the total is <span class="m">m × n</span>. A 3×4 matrix has 12 entries. Counting is multiplication; that is also why the order is written as a product.</p>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> <span class="m">B = [[1,0,4],[3,2,6]]</span> has 2 rows and 3 columns, so order 2×3, with 6 entries, and <span class="m">b<sub>13</sub> = 4</span>.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> Build a 2×2 matrix with <span class="m">a<sub>ij</sub> = 2i − j</span>. Substitute: a₁₁ = 1, a₁₂ = 0, a₂₁ = 3, a₂₂ = 2. So the matrix is <span class="m">[[1,0],[3,2]]</span>. The rule produces every entry; one formula describes a whole table.</div>
+  <div class="card"><span class="lbl">Challenging.</span> Find x and y if <span class="m">[[x+y, 3],[5, x−y]] = [[7, 3],[5, 1]]</span>. Equal matrices match position by position, so x+y = 7 and x−y = 1. Adding: 2x = 8, x = 4, y = 3. Check: 4+3 = 7 and 4−3 = 1. ✓ Equality of matrices turned one statement into several equations.</div>
+  <h2>7 · Interactive experiment</h2><p>Resize the matrix, type any numbers, and click a cell. The lab names the cell and classifies the matrix. Try to make it an <b>identity</b>, then a <b>triangular</b> one.</p>
+  <div class="card"><div class="row">Rows <select id="er">${[1,2,3,4].map(n=>`<option ${n==3?"selected":""}>${n}</option>`)}</select> Columns <select id="ec">${[1,2,3,4].map(n=>`<option ${n==3?"selected":""}>${n}</option>`)}</select></div>
+  <div id="e1" style="overflow-x:auto"></div><div id="e1i" class="m big"></div><div id="e1t"></div></div>
+  <h2>8 · In the real world</h2><p>A grayscale photo is a matrix whose entries are brightness values. A 1080×1920 phone screen is a matrix with over 2 million entries. Games rotate 3D worlds by multiplying matrices. Search engines rank pages with enormous ones. Same idea, different size.</p>
+  <h2>9 · Active recall</h2><p class="mute">Close your eyes first, then write in your own words. Then compare.</p>
+  ${[["r1","Explain to a friend what “order 3×2” means and why order 2×3 is a different matrix."],["r2","Why does the position of a number matter in a matrix, but not in a set?"]].map(r=>`<div class="card"><p>${r[1]}</p><textarea id="${r[0]}" oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>Order 3×2 means 3 rows and 2 columns, 6 entries. 2×3 has 2 rows and 3 columns, a different shape, so they can never be equal. Position matters because a₁₂ and a₂₁ describe different places in the table, like (row, column) coordinates on a map.</p></details>
+  <h2>10 · Practice</h2><p class="mute">Attempt first. Hints appear on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>11 · Summary</h2><div class="card"><p>A matrix packages a table of numbers into one object. Rows run across, columns run down, order is rows × columns, and entry <span class="m">a<sub>ij</sub></span> is found by (row, column). Two matrices are equal only when their orders match and every position agrees. Special shapes — square, zero, identity, diagonal, triangular — are the vocabulary we will use in every later module.</p>
+  <button class="b" onclick="S.done.l1=1;save();this.textContent='Lesson complete ✓'">Mark lesson complete</button></div>`;
+  E1=Ed($("#e1"),3,3,[[1,0,0],[0,1,0],[0,0,1]],{on:info,sel:(i,j)=>{$("#e1i").innerHTML=`Cell a<sub>${i+1}${j+1}</sub> = row ${i+1}, column ${j+1}`}});
+  $("#er").onchange=$("#ec").onchange=()=>{E1.resize(+$("#er").value,+$("#ec").value)};
+  function info(){if(!E1)return;const g=E1.get();$("#e1t").innerHTML=g.err?`<span class="err">${g.err}</span>`:classify(g.m).map(t=>`<span class="tag">${t}</span>`).join("")}
+  info();curM=1;qs()}
+let curM=1;
+function qs(m=curM){
+  $("#qs").innerHTML=Q.filter(q=>(q.m||1)==m).map(q=>{const a=S.ans[q.id];return `<div class="card"><span class="tag">Level ${q.lv}</span><p>${q.q}</p>
+   ${q.t=="mc"?q.o.map((o,i)=>`<label class="o"><input type="radio" name="${q.id}" value="${i}" ${a&&a.v==i?"checked":""} ${a?"disabled":""}> ${o}</label>`).join(""):`<input class="n" type="number" step="any" id="${q.id}" value="${a?a.v:""}" ${a?"disabled":""} placeholder="your answer">`}
+   <div class="row" style="margin-top:8px">${a?"":`<button class="b" onclick="chk('${q.id}')">Submit</button><button class="g" onclick="$('#h${q.id}').hidden=false">Hint</button>`}</div>
+   <p id="h${q.id}" class="mute" hidden>Hint: ${q.h}</p>
+   <div id="f${q.id}">${a?fb(q,a.ok):""}</div></div>`}).join("")}
+const fb=(q,ok)=>`<p class="${ok?"ok":"err"}">${ok?"Correct.":"Not quite."}</p><p>${q.e}</p>`;
+function chk(id){const q=Q.find(x=>x.id==id);let v;
+  if(q.t=="mc"){const c=document.querySelector(`input[name=${id}]:checked`);if(!c){$("#f"+id).innerHTML='<p class="err">Choose an option first.</p>';return}v=+c.value}
+  else{const t=$("#"+id).value.trim();if(t===""||!isFinite(+t)){$("#f"+id).innerHTML='<p class="err">Enter a number, for example 12.</p>';return}v=+t}
+  const ok=v===q.a;S.ans[id]={v,ok};if(!ok&&!S.mist.includes(id))S.mist.push(id);if(ok)S.mist=S.mist.filter(x=>x!=id);save();qs()}
+
+/* ---------- Lesson 2: operations ---------- */
+Q.push(
+ {id:"q6",m:2,lv:1,t:"mc",q:"A is 2×3 and B is 3×5. What is the order of AB?",o:["3×3","2×5","2×3","AB is undefined"],a:1,h:"Columns of A must equal rows of B. The outer numbers give the result.",e:"The inner numbers match (3 and 3), so AB exists. The outer numbers give its order: 2×5."},
+ {id:"q7",m:2,lv:2,t:"num",q:"A = [[1,2],[3,4]], B = [[2,0],[1,3]]. Find the entry in row 2, column 2 of AB.",a:12,h:"Pair row 2 of A with column 2 of B, multiply in pairs, then add.",e:"Row 2 of A is (3, 4); column 2 of B is (0, 3). 3·0 + 4·3 = 12."},
+ {id:"q8",m:2,lv:1,t:"mc",q:"Which statement is true for matrices A and B of the same order?",o:["AB = BA always","A + B = B + A always","AB is always defined","A + B is defined for any two matrices"],a:1,h:"Addition works entry by entry on ordinary numbers. What does that guarantee?",e:"Each entry is a number sum a+b = b+a, so A+B = B+A. Multiplication is not commutative, and addition needs equal orders."},
+ {id:"q9",m:2,lv:2,t:"num",q:"A = [[1,2],[0,1]] and B = [[1,0],[2,1]]. Find the sum of all entries of 3A − 2B.",a:4,h:"Compute 3A and 2B separately, subtract entry by entry, then add up the four results.",e:"3A = [[3,6],[0,3]], 2B = [[2,0],[4,2]]. 3A − 2B = [[1,6],[−4,1]]. Sum = 1+6−4+1 = 4."},
+ {id:"q10",m:2,lv:3,t:"num",q:"Let A = [[1,1],[0,1]]. What is the top-right entry of A¹⁰ (A multiplied by itself 10 times)?",a:10,h:"Compute A², then A³. Look for what happens to the top-right entry each time.",e:"A² = [[1,2],[0,1]], A³ = [[1,3],[0,1]]. Each extra factor of A adds 1 to the top-right entry, so Aⁿ = [[1,n],[0,1]] and A¹⁰ has 10 there."}
+);
+const mm=(X,Y)=>X.map(r=>Y[0].map((_,j)=>r.reduce((s,x,k)=>s+x*Y[k][j],0)));
+let P=null,R2=null;
+function l2(){
+  P=R2=null;
+  $("#v").innerHTML=`<p class="mute">Track A · Module 2 · Lesson 2</p><h1>Doing arithmetic with whole tables</h1>
+  <h2>1 · The big idea</h2><p>Adding and scaling matrices is exactly what you expect: do it entry by entry. Multiplying is different, and strange at first: it is <em>not</em> entry by entry. It is built so that one matrix can describe a process and another matrix can describe a second process, and their product describes “do one, then the other”.</p>
+  <h2>2 · Why it exists</h2><p>Suppose y₁ = 2x₁ + 3x₂ and y₂ = x₁ + 4x₂, and then x₁ = z₁ + z₂ and x₂ = 2z₁ − z₂. Go straight from z to y. Mathematicians wanted one rule that does this substitution automatically, so repeated substitutions become one calculation.</p>
+  <h2>3 · Visual intuition</h2><p>Entry-by-entry addition needs two tables of the same shape, like laying one transparent grid on another.</p>
+  <div class="card" style="text-align:center">${show([[1,2],[3,4]])} + ${show([[5,6],[7,8]])} = ${show([[6,8],[10,12]])}</div>
+  <p>Multiplication pairs a <b>row</b> of the first matrix with a <b>column</b> of the second, like matching a shop’s sales list against a price list.</p>
+  <div class="card" style="text-align:center">${show([[10,5]],(i,j)=>"hl")} × ${show([[3],[4]],(i,j)=>"hl2")} = ${show([[50]])}<div class="mute">10·3 + 5·4 = 50: revenue from 10 of one drink at 3 and 5 of another at 4.</div></div>
+  <h2>4 · The rules</h2><p><b>Addition and subtraction:</b> only when both matrices have the same order; then <span class="m">(A ± B)<sub>ij</sub> = a<sub>ij</sub> ± b<sub>ij</sub></span>.<br><b>Scalar multiple:</b> <span class="m">(kA)<sub>ij</sub> = k·a<sub>ij</sub></span>.<br><b>Product:</b> A (m×n) times B (n×p) is defined, with order m×p, when the <em>inner</em> numbers match. Its entry is <span class="m">(AB)<sub>ij</sub> = a<sub>i1</sub>b<sub>1j</sub> + a<sub>i2</sub>b<sub>2j</sub> + … + a<sub>in</sub>b<sub>nj</sub></span>.</p>
+  <h2>5 · Derivation: why the product has this form</h2><p>Take y₁ = a₁₁x₁ + a₁₂x₂, and x₁ = b₁₁z₁ + b₁₂z₂, x₂ = b₂₁z₁ + b₂₂z₂. Substitute:</p>
+  <div class="step">y₁ = a₁₁(b₁₁z₁ + b₁₂z₂) + a₁₂(b₂₁z₁ + b₂₂z₂)</div>
+  <div class="step">y₁ = (a₁₁b₁₁ + a₁₂b₂₁) z₁ + (a₁₁b₁₂ + a₁₂b₂₂) z₂</div>
+  <p>The coefficient of z₁ is a₁₁b₁₁ + a₁₂b₂₁: row 1 of A against column 1 of B. The row-by-column rule is not arbitrary; it is what substitution forces. And the inner sizes match because the x’s produced by B are the x’s consumed by A.</p>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> With A = [[1,2],[3,4]] and B = [[5,6],[7,8]]: A + B = [[6,8],[10,12]] and 2A = [[2,4],[6,8]]. Each entry is handled on its own.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> A = [[1,2],[3,4]], B = [[0,1],[1,0]].<br>AB: row 1·col 1 = 1·0 + 2·1 = 2; row 1·col 2 = 1·1 + 2·0 = 1; row 2·col 1 = 3·0 + 4·1 = 4; row 2·col 2 = 3.<div style="text-align:center">AB = ${show([[2,1],[4,3]])} BA = ${show([[3,4],[1,2]])}</div>Right-multiplying by B swapped A’s <em>columns</em>; left-multiplying swapped its <em>rows</em>. So AB ≠ BA.</div>
+  <div class="card"><span class="lbl">Challenging.</span> Find x if [[1,x],[0,1]]² = [[1,6],[0,1]]. Multiply: top-right entry = 1·x + x·1 = 2x, other entries stay 1, 0, 1. So 2x = 6 and x = 3. Spotting the pattern, [[1,x],[0,1]]ⁿ = [[1,nx],[0,1]], which is how you would compute a 100th power without 99 multiplications.</div>
+  <h2>7 · Interactive experiment</h2><p>Choose a size, change the entries, and watch the results. Try to find two matrices where AB = BA. Is it easy? What do they have in common?</p>
+  <div class="card"><div class="row">Size <select id="pn"><option>2</option><option>3</option></select> (square)</div>
+  <div class="row" style="align-items:flex-start"><div><b>A</b><div id="pa" style="overflow-x:auto"></div></div><div><b>B</b><div id="pb" style="overflow-x:auto"></div></div></div><div id="pout"></div></div>
+  <h2>8 · In the real world</h2><p>A game character’s movement is a chain: rotate, then scale, then translate. Each step is a matrix, and the product of the matrices is the whole move, applied to thousands of points in one go. Order matters: rotating then moving is not moving then rotating, which is exactly non-commutativity. Spreadsheets of costs times quantities, and population models that step forward year by year, use the same product.</p>
+  <h2>9 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r3","State the condition for AB to exist, and how to find the order of the result without computing anything."],["r4","Why is AB generally different from BA? Give a reason, not just an example."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>AB exists when A’s column count equals B’s row count; for m×n times n×p, the result is m×p. AB ≠ BA generally because AB means “apply B first, then A” and BA means the reverse; sequences of actions usually give different outcomes. Sometimes BA does not even exist when AB does.</p></details>
+  <h2>10 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>11 · Summary</h2><div class="card"><p>Addition and scalar multiples act entry by entry and need equal orders for addition. Multiplication pairs rows with columns because it encodes “do one process, then another”. The inner orders must match, the outer orders give the result’s shape, and AB ≠ BA in general. Addition is commutative; multiplication is not.</p>
+  <button class="b" onclick="S.done.l2=1;save();this.textContent='Lesson complete ✓'">Mark lesson complete</button></div>`;
+  P=Ed($("#pa"),2,2,[[1,2],[3,4]],{on:cmp});R2=Ed($("#pb"),2,2,[[0,1],[1,0]],{on:cmp});
+  $("#pn").onchange=()=>{const n=+$("#pn").value;P.resize(n,n);R2.resize(n,n)};
+  function cmp(){if(!P||!R2||P.r!=R2.r)return;const a=P.get(),b=R2.get();
+    if(a.err||b.err){$("#pout").innerHTML=`<p class="err">${a.err||b.err}</p>`;return}
+    const X=a.m,Y=b.m,AB=mm(X,Y),BA=mm(Y,X),eq=JSON.stringify(AB)==JSON.stringify(BA);
+    $("#pout").innerHTML=`<div class="row">${"AB"} ${show(AB)} ${"BA"} ${show(BA)}</div><p class="${eq?"ok":"err"}">${eq?"AB = BA for this pair. That is a special case.":"AB ≠ BA: order matters."}</p><p class="mute">A + B always equals B + A: ${show(X.map((r,i)=>r.map((x,j)=>x+Y[i][j])))}</p>`}
+  cmp();curM=2;qs()}
+
+/* ---------- Lesson 3: determinants ---------- */
+Q.push(
+ {id:"q11",m:3,lv:1,t:"mc",q:"A square matrix has determinant 0. What does that tell you?",o:["It is the zero matrix","It is singular: it flattens space, so it has no inverse","It is the identity matrix","Its entries are all equal"],a:1,h:"Think about the area of the transformed unit square when det = 0.",e:"det = 0 means the unit square is squashed onto a line or a point (area 0). Information is lost, so no matrix can undo it: it is singular. Many non-zero matrices have det 0, so it is not just the zero matrix."},
+ {id:"q12",m:3,lv:2,t:"num",q:"Find det [[4,3],[2,5]].",a:14,h:"ad − bc: multiply the main diagonal, then subtract the product of the other diagonal.",e:"4·5 − 3·2 = 20 − 6 = 14."},
+ {id:"q13",m:3,lv:2,t:"num",q:"Find det [[1,2,3],[0,4,5],[1,0,6]] by expanding along row 1.",a:22,h:"Signs go + − + across the first row. Each minor is a 2×2 determinant.",e:"1·(4·6−5·0) − 2·(0·6−5·1) + 3·(0·0−4·1) = 24 + 10 − 12 = 22."},
+ {id:"q14",m:3,lv:1,t:"mc",q:"You swap two rows of a matrix. What happens to its determinant?",o:["Nothing","It is multiplied by −1","It doubles","It becomes 0"],a:1,h:"A swap reverses orientation, like looking at the square in a mirror.",e:"Swapping two rows multiplies the determinant by −1. Orientation flips, area stays the same."},
+ {id:"q15",m:3,lv:3,t:"num",q:"A is 3×3 with det A = 2. Find det(3A).",a:54,h:"3A multiplies every row by 3. Each row scaled by 3 multiplies the determinant by 3.",e:"Three rows are each scaled by 3, so det(3A) = 3³·det A = 27·2 = 54. In general det(kA) = kⁿ det A for an n×n matrix, not k·det A."},
+ {id:"q16",m:3,lv:3,t:"num",q:"A parallelogram is spanned by the vectors (3, 1) and (1, 2). What is its area?",a:5,h:"Put the vectors as columns of a matrix. What does |det| measure?",e:"Matrix [[3,1],[1,2]] has det 3·2 − 1·1 = 5. |det| is the area of the parallelogram built on its columns, so the area is 5."}
+);
+let D2=null,D3=null;
+function l3(){
+  D2=D3=null;
+  $("#v").innerHTML=`<p class="mute">Track A · Module 3 · Lesson 3</p><h1>The number that says what a matrix does to space</h1>
+  <h2>1 · The big idea</h2><p>The determinant of a square matrix is a single number with a physical meaning: it is the factor by which the matrix <em>stretches area</em> (or volume, in 3×3), with a minus sign if it also flips orientation. A determinant of 0 means everything gets crushed flat.</p>
+  <h2>2 · Why it exists</h2><p>Solve ax + by = e and cx + dy = f. Multiply the first equation by d and the second by b, then subtract:</p>
+  <div class="step">(ad − bc)·x = ed − bf</div>
+  <p>To divide by (ad − bc) and get x, it must not be zero. That number decides whether the system has one clean solution. People found it long before matrices existed, and called it the <em>determinant</em> because it <em>determines</em> whether a solution exists.</p>
+  <h2>3 · Visual intuition</h2><p>A 2×2 matrix sends the unit square to a parallelogram. Its first column is where the right-hand edge lands; its second column is where the top edge lands. The determinant is the signed area of that parallelogram. Use the experiment below to see it.</p>
+  <h2>4 · The formulas</h2><p>For 2×2: <span class="m">det [[a,b],[c,d]] = ad − bc</span>.<br>For 3×3, expand along row 1 using <b>minors</b> (the 2×2 determinant left after crossing out a row and column) with alternating signs + − +:</p>
+  <div class="step">det A = a₁₁·M₁₁ − a₁₂·M₁₂ + a₁₃·M₁₃</div>
+  <h2>5 · Derivation: why the signs alternate</h2><p>Write each row as a combination of the standard directions. Because the determinant is linear in each row separately, it splits into three smaller pieces, one per entry in row 1. Moving a column into position past the others costs one swap each, and each swap multiplies by −1, giving + − +. You can expand along any row or column; the sign of position (i, j) is (−1)<sup>i+j</sup>, a checkerboard.</p>
+  <h2>6 · Properties, with reasons</h2><div class="card"><p>• Swap two rows: det × (−1) (orientation flips).<br>• A row of zeros, or two equal rows: det = 0 (the shape is flat).<br>• Multiply one row by k: det × k (area stretches by k in that direction).<br>• So det(kA) = kⁿ·det A for n×n.<br>• det(AB) = det A · det B (stretch factors multiply when you do one transformation then another).<br>• det A = 0 exactly when A is singular (no inverse); otherwise non-singular.</p></div>
+  <h2>7 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> det [[3,1],[2,4]] = 3·4 − 1·2 = 10. The unit square becomes a parallelogram of area 10.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> det [[2,0,1],[1,3,2],[1,1,4]]. Row 1: 2·(3·4−2·1) − 0·(1·4−2·1) + 1·(1·1−3·1) = 2·10 − 0 + (−2) = 18. The zero entry removes a whole term, so choose the row or column with the most zeros.</div>
+  <div class="card"><span class="lbl">Challenging.</span> For which k is [[k,2],[3,k+1]] singular? Set k(k+1) − 6 = 0, so k² + k − 6 = 0, (k+3)(k−2) = 0, hence k = 2 or k = −3. Check k = 2: [[2,2],[3,3]] has equal-ratio rows, so it is flat. ✓</div>
+  <h2>8 · Interactive experiment</h2><p>Edit the 2×2 matrix. The dashed square is the unit square; the shaded shape is its image. Try [[1,2],[2,4]]: what happens? Then try swapping its columns.</p>
+  <div class="card"><div id="da"></div><svg id="dsv" viewBox="0 0 300 300" width="100%" style="max-width:320px;background:#0b111c;border-radius:8px" role="img" aria-label="unit square and its image"></svg><div id="dout"></div></div>
+  <p>Now a 3×3 expansion along row 1, with every number shown:</p>
+  <div class="card"><div id="db" style="overflow-x:auto"></div><div id="dout3"></div></div>
+  <h2>9 · In the real world</h2><p>Engineers check the determinant of a mechanism’s Jacobian: a zero means the robot arm has lost a direction of motion. Graphics software uses a negative determinant to detect a mirrored (inside-out) triangle. In physics, volumes in changing coordinates scale by a determinant, which you will meet again in calculus.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r5","In your own words, what does det = 5 say about a transformation? And det = −5? And det = 0?"],["r6","Why must a matrix with two equal rows have determinant 0? Use the swap property."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>det 5: areas become 5 times larger, orientation kept. det −5: areas ×5 and mirrored. det 0: everything flattened to a line or point, no way back. For equal rows: swapping them changes nothing, yet the swap property says det becomes −det. So det = −det, which forces det = 0.</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>The determinant is the signed area (or volume) scale factor of a square matrix. It is computed by ad − bc in 2×2 and by cofactor expansion with alternating signs in larger sizes. It is 0 exactly when the matrix flattens space, which makes the matrix singular and non-invertible. It multiplies under matrix products and flips sign under a row swap.</p>
+  <button class="b" onclick="S.done.l3=1;save();this.textContent='Lesson complete ✓'">Mark lesson complete</button></div>`;
+  D2=Ed($("#da"),2,2,[[2,1],[0,1.5]],{on:draw});D3=Ed($("#db"),3,3,[[2,0,1],[1,3,2],[1,1,4]],{on:exp3});
+  function draw(){if(!D2)return;const g=D2.get(),o=$("#dout");
+    if(g.err){o.innerHTML=`<span class="err">${g.err}</span>`;return}
+    const a=g.m[0][0],b=g.m[0][1],c=g.m[1][0],d=g.m[1][1],dt=a*d-b*c;
+    const pts=[[0,0],[a,c],[a+b,c+d],[b,d]],mx=Math.max(2,...pts.flat().map(Math.abs)),k=120/mx,X=x=>150+x*k,Y=y=>150-y*k;
+    const poly=pts.map(p=>X(p[0])+","+Y(p[1])).join(" "),col=dt==0?"#ef6f6c":dt>0?"#58d1c4":"#f0b84d";
+    $("#dsv").innerHTML=`<line x1="0" y1="150" x2="300" y2="150" stroke="#26344d"/><line x1="150" y1="0" x2="150" y2="300" stroke="#26344d"/><polygon points="${X(0)},${Y(0)} ${X(1)},${Y(0)} ${X(1)},${Y(1)} ${X(0)},${Y(1)}" fill="none" stroke="#93a1b8" stroke-dasharray="4 3"/><polygon points="${poly}" fill="${col}" fill-opacity=".3" stroke="${col}" stroke-width="2"/><circle cx="${X(a)}" cy="${Y(c)}" r="4" fill="${col}"/><circle cx="${X(b)}" cy="${Y(d)}" r="4" fill="#e6ebf3"/>`;
+    o.innerHTML=`<div class="step">det = ad − bc = (${fmt(a)})(${fmt(d)}) − (${fmt(b)})(${fmt(c)}) = ${fmt(dt)}</div><p class="${dt==0?"err":"ok"}">${dt==0?"Area 0: the square is flattened onto a line or point. The matrix is singular and has no inverse.":dt>0?`Areas are multiplied by ${fmt(dt)}. Orientation is kept.`:`Areas are multiplied by ${fmt(-dt)}, and the square is mirrored (orientation flipped).`}</p><p class="mute">Coloured dot: image of the right edge (first column). White dot: image of the top edge (second column).</p>`}
+  function exp3(){if(!D3)return;const g=D3.get(),o=$("#dout3");
+    if(g.err){o.innerHTML=`<span class="err">${g.err}</span>`;return}
+    const M=g.m,mn=j=>det(M.slice(1).map(r=>r.filter((_,k)=>k!=j))),m=[0,1,2].map(mn),t=[0,1,2].map(j=>(j%2?-1:1)*M[0][j]*m[j]);
+    o.innerHTML=`<div class="step">Minors: M₁₁ = ${fmt(m[0])}, M₁₂ = ${fmt(m[1])}, M₁₃ = ${fmt(m[2])}</div><div class="step">det = (${fmt(M[0][0])})(${fmt(m[0])}) − (${fmt(M[0][1])})(${fmt(m[1])}) + (${fmt(M[0][2])})(${fmt(m[2])})</div><div class="step">det = ${fmt(t[0]+t[1]+t[2])}</div><p class="${t[0]+t[1]+t[2]==0?"err":"ok"}">${t[0]+t[1]+t[2]==0?"Determinant 0: singular.":"Non-zero: non-singular."}</p>`}
+  draw();exp3();curM=3;qs()}
+
+/* ---------- Lesson 4: inverses ---------- */
+Q.push(
+ {id:"q17",m:4,lv:1,t:"mc",q:"Which of these matrices has no inverse?",o:["[[1,2],[3,4]]","[[2,4],[1,2]]","[[0,1],[1,0]]","[[1,0],[0,1]]"],a:1,h:"Compute ad − bc for each one.",e:"For [[2,4],[1,2]]: 2·2 − 4·1 = 0, so it is singular. The others have determinants −2, −1 and 1."},
+ {id:"q18",m:4,lv:2,t:"num",q:"Let A = [[3,1],[5,2]]. Find the sum of all four entries of A⁻¹.",a:-1,h:"det A first. Then swap the diagonal entries, negate the other two, divide by det.",e:"det A = 6 − 5 = 1. A⁻¹ = [[2,−1],[−5,3]]. Sum = 2 − 1 − 5 + 3 = −1."},
+ {id:"q19",m:4,lv:2,t:"num",q:"A = [[4,7],[2,6]]. Find det(A⁻¹) as a decimal.",a:0.1,h:"You do not need to compute A⁻¹. Use det A · det A⁻¹ = det I = 1.",e:"det A = 24 − 14 = 10. Since det A · det A⁻¹ = det I = 1, det A⁻¹ = 1/10 = 0.1."},
+ {id:"q20",m:4,lv:1,t:"mc",q:"A and B are invertible matrices of the same order. What is (AB)⁻¹?",o:["A⁻¹B⁻¹","B⁻¹A⁻¹","A⁻¹ + B⁻¹","(A + B)⁻¹"],a:1,h:"If you put on socks then shoes, which do you take off first?",e:"AB means “do B, then A”. To undo, reverse the order: undo A first, then B. So (AB)⁻¹ = B⁻¹A⁻¹. Check: AB·B⁻¹A⁻¹ = A(BB⁻¹)A⁻¹ = AA⁻¹ = I."},
+ {id:"q21",m:4,lv:3,t:"num",q:"For what positive value of k does [[k,4],[1,k]] have no inverse?",a:2,h:"No inverse means determinant 0. Set up and solve the equation.",e:"det = k·k − 4·1 = k² − 4 = 0, so k = 2 or k = −2. The positive value is 2."},
+ {id:"q22",m:4,lv:3,t:"num",q:"A is 2×2 with det A = 5. Find det(2A⁻¹) as a decimal.",a:0.8,h:"Two steps: det A⁻¹, then how scaling an n×n matrix by k changes det (from Lesson 3).",e:"det A⁻¹ = 1/5. For a 2×2 matrix, det(kM) = k² det M, so det(2A⁻¹) = 4·(1/5) = 0.8."}
+);
+const inv=M=>{const n=M.length,d=det(M);if(d==0)return{d};
+  const cof=M.map((r,i)=>r.map((_,j)=>((i+j)%2?-1:1)*det(M.filter((_,a)=>a!=i).map(rr=>rr.filter((_,b)=>b!=j))))),
+  adj=cof[0].map((_,j)=>cof.map(r=>r[j]));
+  return{d,cof,adj,inv:adj.map(r=>r.map(x=>x/d))}};
+let I4=null;
+function l4(){
+  I4=null;
+  $("#v").innerHTML=`<p class="mute">Track A · Module 4 · Lesson 4</p><h1>Undoing a matrix</h1>
+  <h2>1 · The big idea</h2><p>An inverse matrix <span class="m">A⁻¹</span> is the matrix that <em>undoes</em> A. If A takes a point somewhere, A⁻¹ brings it straight back. Doing both leaves everything where it started, which is the identity matrix: <span class="m">A A⁻¹ = A⁻¹ A = I</span>.</p>
+  <h2>2 · Why it exists</h2><p>With numbers, you solve 3x = 12 by dividing by 3, or multiplying by 1/3. Matrices have no division, but they can have an inverse, which plays the role of 1/3. Later, an inverse lets us solve a whole system of equations in one step.</p>
+  <h2>3 · When can something be undone?</h2><p>A transformation can be undone only if it loses no information. If A flattens the plane onto a line (determinant 0), many points land on the same spot and there is no way to know where each came from. So <b>an inverse exists exactly when det A ≠ 0</b>. Algebraically: det A · det A⁻¹ = det I = 1, and no number times 0 equals 1.</p>
+  <h2>4 · The 2×2 formula, and where it comes from</h2><p>Multiply A = [[a,b],[c,d]] by [[d,−b],[−c,a]]:</p>
+  <div class="step">[[a,b],[c,d]] · [[d,−b],[−c,a]] = [[ad−bc, 0],[0, ad−bc]] = (ad−bc)·I</div>
+  <p>Divide by the number ad − bc (possible only if it is not 0) and we have an inverse:</p>
+  <div class="step">A⁻¹ = (1 / (ad − bc)) · [[d, −b],[−c, a]]</div>
+  <p>In words: swap the diagonal entries, negate the other two, divide by the determinant.</p>
+  <h2>5 · The 3×3 method, and why it works</h2><p>Replace each entry by its <b>cofactor</b> (± the minor, with the checkerboard sign pattern) to get the cofactor matrix C. Transpose it to get the <b>adjugate</b>: adj A = Cᵀ. Then:</p>
+  <div class="step">A⁻¹ = (1 / det A) · adj A</div>
+  <p>Why: multiplying a row of A by the matching row of cofactors is exactly the expansion of det A. Multiplying a row of A by a <em>different</em> row of cofactors is the expansion of a matrix with two equal rows, which is 0 (Lesson 3). So A · adj A has det A on the diagonal and 0 elsewhere: (det A)·I.</p>
+  <h2>6 · Properties</h2><div class="card"><p>• The inverse is unique.<br>• (A⁻¹)⁻¹ = A.<br>• (AB)⁻¹ = B⁻¹A⁻¹: undo in reverse order, like taking off shoes before socks.<br>• det A⁻¹ = 1 / det A.</p></div>
+  <h2>7 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> A = [[2,1],[5,3]]. det = 6 − 5 = 1, so A⁻¹ = [[3,−1],[−5,2]]. Verify: row 1 · column 1 = 2·3 + 1·(−5) = 1, row 1 · column 2 = 2·(−1) + 1·2 = 0, and the other two entries come out 0 and 1. So AA⁻¹ = I. ✓</div>
+  <div class="card"><span class="lbl">Intermediate.</span> A = [[4,7],[2,6]]. det = 24 − 14 = 10. A⁻¹ = (1/10)[[6,−7],[−2,4]] = [[0.6,−0.7],[−0.2,0.4]]. A determinant of 10 means A stretches area tenfold, so A⁻¹ shrinks it to a tenth.</div>
+  <div class="card"><span class="lbl">Challenging.</span> A = [[1,2,0],[0,1,3],[2,0,1]]. det = 1(1−0) − 2(0−6) + 0 = 13. Cofactor matrix C = [[1,6,−2],[−2,1,4],[6,−3,1]]. Transpose for adj A = [[1,−2,6],[6,1,−3],[−2,4,1]]. So A⁻¹ = (1/13)·adj A. Check one entry: row 1 of A · column 1 of adj A = 1·1 + 2·6 + 0 = 13, and 13/13 = 1. ✓ Paste this matrix into the experiment to confirm every entry.</div>
+  <h2>8 · Interactive experiment</h2><p>Choose a size, enter a matrix, and watch the method step by step. Then try to make it singular. What do you notice about the rows?</p>
+  <div class="card"><div class="row">Size <select id="in"><option>2</option><option>3</option></select></div><div id="ia" style="overflow-x:auto"></div><div id="iout"></div></div>
+  <h2>9 · In the real world</h2><p>A secret message can be scrambled by multiplying by a matrix, and only someone who knows its inverse can unscramble it (the Hill cipher). Graphics software uses inverses to map a click on the screen back to a point in the 3D scene. Scientists use them to recover the real signal from distorted instrument readings.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r7","Explain, without a formula, why a matrix with determinant 0 cannot have an inverse."],["r8","Why is (AB)⁻¹ equal to B⁻¹A⁻¹ and not A⁻¹B⁻¹? Use a real-life example."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>det 0 means the matrix squashes different points onto the same place, so given the output you cannot tell which input produced it; no operation can reverse that. Also det A · det A⁻¹ = 1 is impossible if det A = 0. For the product: AB means B happens first and A second, so undoing must reverse that order, like taking off your shoes before your socks.</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>The inverse of A undoes A, and exists exactly when det A ≠ 0. For 2×2, swap the diagonal, negate the other two entries and divide by the determinant. For larger sizes, A⁻¹ = adj A / det A. Always verify by checking that A · A⁻¹ = I. Inverses reverse order in products.</p>
+  <button class="b" onclick="S.done.l4=1;save();this.textContent='Lesson complete ✓'">Mark lesson complete</button></div>`;
+  I4=Ed($("#ia"),2,2,[[2,1],[5,3]],{on:run});
+  $("#in").onchange=()=>{const n=+$("#in").value;I4.resize(n,n)};
+  function run(){if(!I4)return;const g=I4.get(),o=$("#iout");
+    if(g.err){o.innerHTML=`<span class="err">${g.err}</span>`;return}
+    const M=g.m,n=M.length,r=inv(M);
+    if(r.d==0){o.innerHTML=`<div class="step">det A = 0</div><p class="err">Singular: no inverse exists. The matrix flattens space, so the original input cannot be recovered. Look for a row that is a multiple or a combination of the others.</p>`;return}
+    const P=mm(M,r.inv),isI=P.every((row,i)=>row.every((x,j)=>Math.abs(x-(i==j?1:0))<1e-9));
+    o.innerHTML=`<div class="step">1. det A = ${fmt(r.d)} ≠ 0, so an inverse exists.</div><div class="step">2. Cofactor matrix C:</div>${show(r.cof)}<div class="step">3. Adjugate = transpose of C:</div>${show(r.adj)}<div class="step">4. A⁻¹ = (1/${fmt(r.d)}) · adjugate:</div>${show(r.inv)}<div class="step">5. Check A · A⁻¹:</div>${show(P)}<p class="${isI?"ok":"err"}">${isI?"This is the identity matrix. ✓":"Not the identity: a mistake somewhere."}</p>`}
+  run();curM=4;qs()}
+
+/* ---------- Lesson 5: systems ---------- */
+Q.push(
+ {id:"q23",m:5,lv:1,t:"mc",q:"A system is written AX = B with A square and det A ≠ 0. How many solutions does it have?",o:["Exactly one","None","Infinitely many","It depends on B"],a:0,h:"If A has an inverse, multiply both sides on the left by it.",e:"X = A⁻¹B, and A⁻¹B is a single definite matrix, so there is exactly one solution, whatever B is."},
+ {id:"q24",m:5,lv:2,t:"num",q:"Solve 2x + y = 7 and x + y = 4 using the inverse. Find the value of 10x + y.",a:31,h:"A = [[2,1],[1,1]] has det 1. Compute A⁻¹, then X = A⁻¹B.",e:"A⁻¹ = [[1,−1],[−1,2]]. X = A⁻¹[7,4] = [7−4, −7+8] = [3,1]. So x = 3, y = 1 and 10x + y = 31."},
+ {id:"q25",m:5,lv:2,t:"num",q:"x + y = 3, x + z = 4, y + z = 5. Find x + 2y + 3z.",a:14,h:"Add all three equations to get x + y + z, then subtract each original equation from it.",e:"Adding: 2(x+y+z) = 12, so x+y+z = 6. Then z = 6−3 = 3, y = 6−4 = 2, x = 6−5 = 1. x + 2y + 3z = 1 + 4 + 9 = 14."},
+ {id:"q26",m:5,lv:1,t:"mc",q:"While row-reducing, you reach a row [0 0 0 | 5]. What does it say?",o:["x = 5","0 = 5, so the system has no solution","Infinitely many solutions","A unique solution"],a:1,h:"Translate the row back into an equation.",e:"The row means 0x + 0y + 0z = 5, which is impossible. The system is inconsistent. A row of all zeros including the right side (0 = 0) would instead mean a free variable."},
+ {id:"q27",m:5,lv:3,t:"num",q:"For what value of k does x + 2y = 3, 2x + ky = 6 have infinitely many solutions?",a:4,h:"Do R2 ← R2 − 2R1 and see when the second row disappears.",e:"R2 − 2R1 gives (k−4)y = 0. If k ≠ 4, y = 0 and x = 3 (unique). If k = 4, the row is 0 = 0 and one equation is left, giving infinitely many solutions."},
+ {id:"q28",m:5,lv:3,t:"num",q:"3 pens and 2 notebooks cost 19. 5 pens and 4 notebooks cost 35. What is the price of one notebook?",a:5,h:"Write the system in p and n. Double the first equation and subtract.",e:"3p + 2n = 19 and 5p + 4n = 35. Doubling the first: 6p + 4n = 38. Subtract the second: p = 3. Then 9 + 2n = 19, so n = 5."}
+);
+function gauss(A){const E=1e-9,M=A.map(r=>r.slice()),n=M.length,w=M[0].length-1,st=[],piv=[],cp=()=>M.map(x=>x.map(y=>Math.abs(y)<E?0:y));let r=0;
+  for(let c=0;c<w&&r<n;c++){let p=-1;for(let i=r;i<n;i++)if(Math.abs(M[i][c])>E){p=i;break}
+    if(p<0)continue;
+    if(p!=r){[M[p],M[r]]=[M[r],M[p]];st.push([`Swap R${r+1} and R${p+1} to get a non-zero pivot in column ${c+1}.`,cp()])}
+    const v=M[r][c];if(Math.abs(v-1)>E){M[r]=M[r].map(x=>x/v);st.push([`R${r+1} ← R${r+1} ÷ ${fmt(v)} (make the pivot 1).`,cp()])}
+    for(let i=0;i<n;i++)if(i!=r&&Math.abs(M[i][c])>E){const m=M[i][c];M[i]=M[i].map((x,j)=>x-m*M[r][j]);st.push([`R${i+1} ← R${i+1} ${m>0?"−":"+"} ${fmt(Math.abs(m))}·R${r+1} (clear column ${c+1}).`,cp()])}
+    piv.push(c);r++}
+  const F=cp();return{M:F,st,piv,w,bad:F.findIndex(row=>row.slice(0,w).every(x=>x==0)&&row[w]!=0)}}
+let G5=null;
+function l5(){
+  G5=null;
+  $("#v").innerHTML=`<p class="mute">Track A · Module 5 · Lesson 5</p><h1>Solving many equations at once</h1>
+  <h2>1 · The big idea</h2><p>A system like x + 2y = 5 and 3x + 4y = 6 is a single matrix equation: <span class="m">AX = B</span>, where A holds the coefficients, X the unknowns and B the right-hand sides. Solving the system means finding the X that A turns into B.</p>
+  <div class="card" style="text-align:center">${show([[1,2],[3,4]])}<span class="mx" style="grid-template-columns:auto"><span>x</span><span>y</span></span> = ${show([[5],[6]])}<div class="mute">Multiplying the first row by (x, y) gives x + 2y, which must be 5.</div></div>
+  <h2>2 · Why it exists</h2><p>Real problems have many unknowns at once: currents in a circuit, forces on a bridge, prices from receipts. Substituting by hand gets painful beyond three unknowns. A systematic method that works for any size is what lets computers solve systems with millions of unknowns.</p>
+  <h2>3 · Visual intuition</h2><p>Each equation in two unknowns is a line. A solution is a point on every line.</p>
+  <div class="card"><p>• <b>One solution:</b> the lines cross at a single point (det A ≠ 0).<br>• <b>No solution:</b> parallel lines that never meet (inconsistent).<br>• <b>Infinitely many:</b> the lines are the same line (consistent, with free variables).</p></div>
+  <p>In 3 unknowns each equation is a plane. The same three outcomes occur. Try them in the experiment below.</p>
+  <h2>4 · Method 1: the inverse</h2><p>If det A ≠ 0, multiply both sides of AX = B <em>on the left</em> by A⁻¹ (order matters, since multiplication is not commutative):</p>
+  <div class="step">A⁻¹AX = A⁻¹B ⇒ IX = A⁻¹B ⇒ X = A⁻¹B</div>
+  <p>Neat, but only when A is square and invertible, and finding A⁻¹ is expensive. The next method always works.</p>
+  <h2>5 · Method 2: Gaussian elimination</h2><p>Write the <b>augmented matrix</b> [A | B] and use three <b>row operations</b>, none of which changes the solutions:</p>
+  <div class="card"><p>1. Swap two rows. 2. Multiply a row by a non-zero number. 3. Add a multiple of one row to another.</p></div>
+  <p>Each one is reversible, which is why the solutions survive: whatever satisfied the old equations satisfies the new ones, and you can get back. The aim is a <b>staircase</b> (row echelon form) and, going further, <b>reduced form</b> where each pivot is 1 with zeros above and below.</p>
+  <h2>6 · Derivation: row operations are matrices</h2><p>Each row operation equals multiplying on the left by an <b>elementary matrix</b>, the identity with that operation applied. Example: R2 ← R2 − 2R1 uses E = [[1,0],[−2,1]]:</p>
+  <div class="card" style="text-align:center">${show([[1,0],[-2,1]])} ${show([[1,2],[2,5]])} = ${show([[1,2],[0,1]])}</div>
+  <p>Every elementary matrix is invertible (undo the operation). If a chain of them turns A into I, then Eₖ…E₂E₁A = I, so <span class="m">A⁻¹ = Eₖ…E₂E₁</span>. Gaussian elimination is secretly computing the inverse.</p>
+  <h2>7 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> x + 2y = 5, 3x + 4y = 6. A = [[1,2],[3,4]], det = −2, A⁻¹ = [[−2,1],[1.5,−0.5]]. X = A⁻¹B = [−2·5 + 1·6, 1.5·5 − 0.5·6] = [−4, 4.5]. Check: −4 + 9 = 5 ✓, −12 + 18 = 6 ✓.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> x + y + z = 6, 2x − y + z = 3, x + 2y − z = 2.<br>R2 ← R2 − 2R1: (0, −3, −1 | −9). R3 ← R3 − R1: (0, 1, −2 | −4).<br>R2 ← R2 + 3R3: (0, 0, −7 | −21), so z = 3. Back-substitute: y − 2z = −4 gives y = 2, then x = 6 − 2 − 3 = 1. Solution (1, 2, 3). ✓</div>
+  <div class="card"><span class="lbl">Challenging.</span> For which k does x + 2y = 3, 2x + ky = 6 have a unique solution, infinitely many, or none? R2 ← R2 − 2R1 gives (k − 4)y = 0. If k ≠ 4: y = 0 and x = 3, unique. If k = 4: the row is 0 = 0, so infinitely many (one line). Change the right side 6 to 7 with k = 4 and the row becomes 0 = 1, which is impossible: none. So the right-hand side matters only when det A = 0.</div>
+  <h2>8 · Interactive experiment</h2><p>Type the augmented matrix (last column is the right-hand side). Watch each row operation. For 2 unknowns, the lines are drawn. Try [[1,2,3],[2,4,6]] and [[1,2,3],[2,4,7]].</p>
+  <div class="card"><div class="row">Unknowns <select id="gn"><option>2</option><option>3</option></select></div><div id="ga" style="overflow-x:auto"></div>
+  <svg id="gsv" viewBox="0 0 300 300" width="100%" style="max-width:300px;background:#0b111c;border-radius:8px" role="img" aria-label="the lines of the system"></svg><div id="gout"></div></div>
+  <h2>9 · In the real world</h2><p>Kirchhoff’s laws turn a circuit into a system for its currents. Structural engineers solve systems for the forces in every beam of a truss. GPS solves a system to find your position from satellite distances. Chemists balance equations by solving a linear system for the coefficients.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r9","Why do row operations never change the solution of a system? Which property of the operations is responsible?"],["r10","Describe the three possible outcomes for a system, in terms of the final rows and in terms of lines or planes."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>Each operation is reversible, so the new system and the old one have exactly the same solutions. Outcomes: a pivot in every unknown column gives one solution (lines cross); a row 0 = c with c ≠ 0 gives none (parallel lines or planes); a row of all zeros and fewer pivots than unknowns gives infinitely many (free variables, coinciding lines).</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>A system is AX = B. If A is invertible, X = A⁻¹B. Gaussian elimination solves any system using three reversible row operations, each equal to multiplying by an elementary matrix. The final rows reveal everything: a pivot in every unknown column means one solution, a row 0 = c (c ≠ 0) means none, and a free variable means infinitely many.</p>
+  <button class="b" onclick="S.done.l5=1;save();this.textContent='Lesson complete ✓'">Mark lesson complete</button></div>`;
+  G5=Ed($("#ga"),2,3,[[1,2,5],[3,4,6]],{on:run});
+  $("#gn").onchange=()=>{const n=+$("#gn").value;G5.resize(n,n+1)};
+  function run(){if(!G5)return;const g=G5.get(),o=$("#gout"),sv=$("#gsv");
+    if(g.err){o.innerHTML=`<span class="err">${g.err}</span>`;return}
+    const n=g.m.length,r=gauss(g.m),V=["x","y","z"];
+    sv.style.display=n==2?"":"none";
+    if(n==2){const X=x=>150+20*x,Y=y=>150-20*y;let s=`<line x1="0" y1="150" x2="300" y2="150" stroke="#26344d"/><line x1="150" y1="0" x2="150" y2="300" stroke="#26344d"/>`;
+      g.m.forEach((q,i)=>{const a=q[0],b=q[1],c=q[2],col=i?"#f0b84d":"#58d1c4";
+        if(Math.abs(b)>1e-9)s+=`<line x1="${X(-8)}" y1="${Y((c+8*a)/b)}" x2="${X(8)}" y2="${Y((c-8*a)/b)}" stroke="${col}" stroke-width="2"/>`;
+        else if(Math.abs(a)>1e-9)s+=`<line x1="${X(c/a)}" y1="0" x2="${X(c/a)}" y2="300" stroke="${col}" stroke-width="2"/>`});
+      if(r.bad<0&&r.piv.length==2)s+=`<circle cx="${X(r.M[0][2])}" cy="${Y(r.M[1][2])}" r="5" fill="#e6ebf3"/>`;sv.innerHTML=s}
+    let v;
+    if(r.bad>=0)v=`<p class="err">Row ${r.bad+1} reads 0 = ${fmt(r.M[r.bad][r.w])}, which is impossible. No solution (inconsistent): the lines or planes never meet at a common point.</p>`;
+    else if(r.piv.length<r.w)v=`<p class="ok">Only ${r.piv.length} pivot(s) for ${r.w} unknowns, so ${r.w-r.piv.length} free variable(s): infinitely many solutions. Each non-pivot unknown can be chosen freely.</p>`;
+    else v=`<p class="ok">Unique solution: ${r.M.map((row,i)=>`${V[i]} = ${fmt(row[r.w])}`).join(", ")}</p>`;
+    o.innerHTML=(r.st.length?r.st.map(s=>`<div class="step">${s[0]}</div>${show(s[1])}`).join(""):`<p class="mute">Already in reduced form.</p>`)+v+`<p class="mute">The last column of each matrix is the right-hand side.</p>`}
+  run();curM=5;qs()}
+
+/* ---------- Lesson 6: transformations, eigen ---------- */
+Q.push(
+ {id:"q29",m:6,lv:1,t:"mc",q:"What do the columns of a 2×2 transformation matrix tell you?",o:["The determinant","Where the basis vectors (1,0) and (0,1) land","The eigenvalues","The inverse"],a:1,h:"Multiply the matrix by (1,0), then by (0,1), and look at the results.",e:"A(1,0) is column 1 and A(0,1) is column 2. Every other vector is a combination of these two, so the columns determine the whole transformation."},
+ {id:"q30",m:6,lv:2,t:"num",q:"A = [[2,1],[0,3]]. Find T(1,2) = A(1,2) and give the sum of its two coordinates.",a:10,h:"Row 1 pairs with (1,2), then row 2 pairs with (1,2).",e:"A(1,2) = (2·1 + 1·2, 0·1 + 3·2) = (4, 6). The sum is 10."},
+ {id:"q31",m:6,lv:1,t:"mc",q:"Are the vectors (1,2) and (3,6) linearly independent?",o:["Yes, they are different vectors","No, (3,6) = 3·(1,2), so they are dependent","Yes, they have different lengths","Only in 3D"],a:1,h:"Can one be written as a multiple of the other?",e:"(3,6) = 3(1,2), so they lie on the same line through the origin. Dependent vectors add no new direction, so they span only a line."},
+ {id:"q32",m:6,lv:2,t:"num",q:"Find the sum of the eigenvalues of [[4,1],[2,3]].",a:7,h:"Solve λ² − (trace)λ + det = 0. What does the sum of its roots equal?",e:"trace = 7, det = 10, so λ² − 7λ + 10 = 0 giving λ = 5 and 2. Sum = 7, equal to the trace. Their product 10 equals the determinant."},
+ {id:"q33",m:6,lv:3,t:"mc",q:"Why does a 90° rotation matrix have no real eigenvectors?",o:["Its determinant is 0","Every direction is turned, so none stays on its own line","It is not square","Its entries are negative"],a:1,h:"An eigenvector keeps its direction. What does a 90° turn do to every direction?",e:"An eigenvector must stay on its own line, only stretched. A 90° rotation turns every direction off its line, so the equation Av = λv has no real solution. (Its eigenvalues are the complex numbers ±i.)"},
+ {id:"q34",m:6,lv:3,t:"num",q:"For which k are (1,0,1), (0,1,1) and (1,1,k) linearly dependent?",a:2,h:"Put them as columns and find when the determinant is 0.",e:"det [[1,0,1],[0,1,1],[1,1,k]] = 1(k−1) − 0 + 1(0−1) = k − 2. It is 0 when k = 2, where the third vector equals the sum of the first two."}
+);
+const PRE=[[[0.7071,-0.7071],[0.7071,0.7071]],[[1,1],[0,1]],[[2,0],[0,0.5]],[[1,0],[0,-1]],[[1,0],[0,0]]];
+const evec=(a,b,c,d,l)=>{const r1=[a-l,b],r2=[c,d-l],r=Math.hypot(...r1)>=Math.hypot(...r2)?r1:r2;return Math.hypot(...r)<1e-9?null:[-r[1],r[0]]};
+let L6=null,V6=null;
+function pre(i){L6.v=PRE[i].map(r=>r.slice());L6.resize(2,2)}
+function l6(){
+  L6=V6=null;
+  $("#v").innerHTML=`<p class="mute">Track A · Module 6 · Lesson 6</p><h1>Matrices as motions, and the directions that survive them</h1>
+  <h2>1 · The big idea</h2><p>Every matrix is a machine that moves the whole plane (or space): it stretches, turns, shears or flattens it. A vector is just an arrow from the origin, and the matrix tells every arrow where to go. Some special arrows only get stretched or shrunk and keep their direction: those are <b>eigenvectors</b>, and they reveal what the matrix really does.</p>
+  <h2>2 · Why it exists</h2><p>Physicists studying vibrating strings, rotating bodies and quantum systems found that complicated motions split into a few independent simple ones. Finding those special directions turns a hard coupled problem into easy separate ones.</p>
+  <h2>3 · Linear transformations and why columns matter</h2><p>A transformation T is <b>linear</b> if it respects addition and scaling: <span class="m">T(u + v) = T(u) + T(v)</span> and <span class="m">T(cu) = cT(u)</span>. Grid lines stay straight, parallel and evenly spaced, and the origin stays put. Every such T in the plane is a matrix, and here is why. Any vector is a combination of the basis vectors:</p>
+  <div class="step">(x, y) = x·(1,0) + y·(0,1) ⇒ T(x,y) = x·T(1,0) + y·T(0,1)</div>
+  <p>So knowing only where (1,0) and (0,1) land fixes everything. Put those two images in as the columns and you have the matrix. That is exactly why matrix multiplication is a row-times-column rule.</p>
+  <h2>4 · Vectors, independence, span, basis</h2><div class="card"><p>• <b>Span</b> of some vectors: everything you can build as a combination of them.<br>• <b>Linearly independent</b>: none of them can be built from the others. Dependent vectors add no new direction.<br>• <b>Basis</b>: independent vectors whose span is the whole space. The number needed is the <b>dimension</b>: 2 for the plane, 3 for space.<br>• n vectors in n-dimensional space are independent exactly when the matrix of those columns has det ≠ 0 (Lesson 3).</p></div>
+  <h2>5 · Eigenvalues and eigenvectors: derivation</h2><p>We look for a non-zero vector v and a number λ with <span class="m">Av = λv</span>. Rewrite it as (A − λI)v = 0. A non-zero v solving this exists only when A − λI is singular (Lessons 4 and 5), so</p>
+  <div class="step">det(A − λI) = 0 ⇒ λ² − (trace A)λ + det A = 0 for a 2×2 matrix</div>
+  <p>Solve for λ, then for each λ solve (A − λI)v = 0 by elimination. Notice: the eigenvalues add up to the trace and multiply to the determinant.</p>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> Rotation by 90°: A = [[0,−1],[1,0]]. Column 1 = (0,1), so (1,0) lands on (0,1). Column 2 = (−1,0), so (0,1) lands on (−1,0). The whole plane turned a quarter turn.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> A = [[2,1],[1,2]]. trace 4, det 3, so λ² − 4λ + 3 = 0 and λ = 3 or 1. For λ = 3: A − 3I = [[−1,1],[1,−1]], so v = (1,1). Check: A(1,1) = (3,3) = 3(1,1). ✓ For λ = 1: v = (1,−1), and A(1,−1) = (1,−1). ✓ Along the diagonal the plane stretches by 3; across it nothing changes.</div>
+  <div class="card"><span class="lbl">Challenging.</span> A = [[4,1],[2,3]]. trace 7, det 10, so λ = 5 or 2. λ = 5: A − 5I = [[−1,1],[2,−2]] gives v = (1,1). λ = 2: [[2,1],[2,1]] gives v = (1,−2). Because Aⁿ scales each eigenvector by λⁿ, A¹⁰(1,1) = 5¹⁰(1,1) with no repeated multiplication. This is how population models and Google’s PageRank are computed.</div>
+  <h2>7 · Interactive experiment A: the transformation grid</h2><p>Edit the matrix or use a preset. The grey grid is the original; the blue grid is its image. Columns show where (1,0) (amber) and (0,1) (teal) land. Green dashed lines are the eigenvector directions. Try the rotation: why are there none?</p>
+  <div class="card"><div class="row"><button class="g" onclick="pre(0)">Rotate 45°</button><button class="g" onclick="pre(1)">Shear</button><button class="g" onclick="pre(2)">Stretch</button><button class="g" onclick="pre(3)">Reflect</button><button class="g" onclick="pre(4)">Flatten</button></div>
+  <div id="ta"></div><svg id="tsv" viewBox="0 0 300 300" width="100%" style="max-width:340px;background:#0b111c;border-radius:8px" role="img" aria-label="transformed grid"></svg><div id="tout"></div></div>
+  <h2>8 · Interactive experiment B: independence and span</h2><p>Each <b>column</b> is a vector in 3D. The test reports the rank: how many truly independent directions the three vectors give.</p>
+  <div class="card"><div id="va" style="overflow-x:auto"></div><div id="vout"></div></div>
+  <h2>9 · In the real world</h2><p>Bridges and buildings vibrate at their eigenfrequencies; engineers make sure wind and footsteps never match them. Principal component analysis, the heart of data science and image compression, uses the eigenvectors of a data table. A spinning object has principal axes that are eigenvectors of its inertia matrix. In games, every rotation, scale and camera move is a linear transformation.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r11","Why do the two columns of a 2×2 matrix fully determine what it does to every vector?"],["r12","In your own words, what is an eigenvector, and why must det(A − λI) = 0 for an eigenvalue λ?"]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>Every vector is x(1,0) + y(0,1), and linearity gives T(x,y) = xT(1,0) + yT(0,1): a combination of the columns. An eigenvector is a non-zero vector that A only stretches, so Av = λv. That says (A − λI)v = 0 has a non-zero solution, which can happen only if A − λI is singular, i.e. its determinant is 0.</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>A matrix is a linear transformation, determined by where it sends the basis vectors (its columns). Independent vectors add new directions; a basis is a minimal set that spans the space. Eigenvectors are the directions a matrix only stretches, found from det(A − λI) = 0, and they make powers and repeated processes easy. The determinant, inverse, systems and eigenvalues you met earlier are all views of the same idea.</p>
+  <button class="b" onclick="S.done.l6=1;save();this.textContent='Lesson complete ✓'">Mark lesson complete</button></div>`;
+  L6=Ed($("#ta"),2,2,[[1,1],[0,1]],{on:tdraw});V6=Ed($("#va"),3,3,[[1,0,1],[0,1,1],[1,1,2]],{on:vtest});
+  function tdraw(){if(!L6)return;const g=L6.get(),o=$("#tout");
+    if(g.err){o.innerHTML=`<span class="err">${g.err}</span>`;return}
+    const[[a,b],[c,d]]=g.m,T=(x,y)=>[a*x+b*y,c*x+d*y],dt=a*d-b*c,E=1e-9;
+    const ext=Math.max(3,...[[3,3],[-3,3],[3,-3],[-3,-3]].map(p=>Math.max(...T(...p).map(Math.abs)))),k=140/ext,X=x=>150+x*k,Y=y=>150-y*k;
+    let s="";
+    for(let i=-3;i<=3;i++){s+=`<line x1="${X(i)}" y1="${Y(-3)}" x2="${X(i)}" y2="${Y(3)}" stroke="#26344d"/><line x1="${X(-3)}" y1="${Y(i)}" x2="${X(3)}" y2="${Y(i)}" stroke="#26344d"/>`;
+      const p=T(i,-3),q=T(i,3),r=T(-3,i),u=T(3,i);
+      s+=`<line x1="${X(p[0])}" y1="${Y(p[1])}" x2="${X(q[0])}" y2="${Y(q[1])}" stroke="#3b6aa0"/><line x1="${X(r[0])}" y1="${Y(r[1])}" x2="${X(u[0])}" y2="${Y(u[1])}" stroke="#3b6aa0"/>`}
+    const tr=a+d,disc=tr*tr-4*dt,col=Math.abs(dt)<E?"#ef6f6c":dt>0?"#58d1c4":"#f0b84d";
+    let ev="",vs=[];
+    if(disc>=-E){const sq=Math.sqrt(Math.max(0,disc));const ls=sq<E?[tr/2]:[(tr+sq)/2,(tr-sq)/2];
+      ls.forEach(l=>{const v=evec(a,b,c,d,l);if(!v){vs.push(`λ = ${fmt(l)}: every vector is an eigenvector (A = λI).`);return}
+        const m=Math.hypot(...v),u=[v[0]/m*12,v[1]/m*12];
+        s+=`<line x1="${X(-u[0])}" y1="${Y(-u[1])}" x2="${X(u[0])}" y2="${Y(u[1])}" stroke="#6fcf8e" stroke-width="2" stroke-dasharray="6 4"/>`;
+        const w=T(...v);vs.push(`λ = ${fmt(l)}, v = (${fmt(v[0])}, ${fmt(v[1])}): A v = (${fmt(w[0])}, ${fmt(w[1])}) = ${fmt(l)}·v`)})}
+    s+=`<polygon points="${X(0)},${Y(0)} ${X(a)},${Y(c)} ${X(a+b)},${Y(c+d)} ${X(b)},${Y(d)}" fill="${col}" fill-opacity=".3" stroke="${col}" stroke-width="2"/><line x1="${X(0)}" y1="${Y(0)}" x2="${X(a)}" y2="${Y(c)}" stroke="#f0b84d" stroke-width="3"/><line x1="${X(0)}" y1="${Y(0)}" x2="${X(b)}" y2="${Y(d)}" stroke="#58d1c4" stroke-width="3"/>`;
+    $("#tsv").innerHTML=s;
+    o.innerHTML=`<div class="step">(1,0) → (${fmt(a)}, ${fmt(c)}) &nbsp; (0,1) → (${fmt(b)}, ${fmt(d)}) &nbsp; det = ${fmt(dt)}</div><p class="${Math.abs(dt)<E?"err":"mute"}">${Math.abs(dt)<E?"det = 0: the plane is flattened onto a line or point (singular).":dt<0?"Areas scale by "+fmt(-dt)+" and the plane is mirrored.":"Areas scale by "+fmt(dt)+"."}</p><div class="step">λ² − ${fmt(tr)}λ + ${fmt(dt)} = 0</div>`+(disc<-E?`<p class="err">Discriminant ${fmt(disc)} &lt; 0: no real eigenvalues. Every direction is turned; none stays on its own line (like a rotation).</p>`:vs.map(t=>`<div class="step">${t}</div>`).join(""))}
+  function vtest(){if(!V6)return;const g=V6.get(),o=$("#vout");
+    if(g.err){o.innerHTML=`<span class="err">${g.err}</span>`;return}
+    const rk=gauss(g.m.map(r=>[...r,0])).piv.length,dt=det(g.m);
+    const t=["All three vectors are the zero vector: they span only the origin.","Rank 1: the vectors all lie on one line. They span a line; they are dependent.","Rank 2: they span a plane through the origin. One vector is a combination of the others, so they are dependent.","Rank 3: independent. They span all of 3D and form a basis."][rk];
+    o.innerHTML=`<div class="step">det = ${fmt(dt)} &nbsp; rank = ${rk}</div><p class="${rk==3?"ok":"err"}">${t}</p>`}
+  tdraw();vtest();curM=6;qs()}
+
+/* ---------- Calculus 1: functions ---------- */
+Q.push(
+ {id:"q35",m:7,lv:1,t:"mc",q:"Which relation is NOT a function of x?",o:["y = x²","y = √x","x = y²","y = |x|"],a:2,h:"A function gives exactly one output per input. In x = y², how many y values fit x = 4?",e:"For x = 4, y could be 2 or −2: one input, two outputs, so x = y² fails the vertical line test. The others give one output for every allowed x."},
+ {id:"q36",m:7,lv:2,t:"num",q:"f(x) = 3x² − x + 2. Find f(−2).",a:16,h:"Substitute −2 for every x. Square first, then multiply by 3.",e:"3(−2)² − (−2) + 2 = 3·4 + 2 + 2 = 16."},
+ {id:"q37",m:7,lv:1,t:"mc",q:"What is the domain of f(x) = √(x − 4)?",o:["x ≥ 4","x ≤ 4","all real numbers","x ≠ 4"],a:0,h:"The expression under a square root cannot be negative.",e:"We need x − 4 ≥ 0, so x ≥ 4. At x = 4 the value is √0 = 0, which is fine, so 4 is included."},
+ {id:"q38",m:7,lv:2,t:"num",q:"g(x) = 2x + 1 and h(x) = x². Find (h∘g)(3).",a:49,h:"h∘g means h(g(x)): the inside function g acts first.",e:"g(3) = 7, then h(7) = 49. (The other order, g(h(3)) = 19, is different: composition is not commutative, just like matrix products.)"},
+ {id:"q39",m:7,lv:3,t:"num",q:"A culture starts at 500 cells and doubles every 3 hours. How many cells after 9 hours?",a:4000,h:"How many doublings fit into 9 hours? Model: N = 500·2^(t/3).",e:"9/3 = 3 doublings, so N = 500·2³ = 500·8 = 4000."},
+ {id:"q40",m:7,lv:3,t:"num",q:"Solve log₂(x) + log₂(x − 2) = 3 for x.",a:4,h:"Combine the logs: log a + log b = log(ab). Then rewrite as a power of 2. Check the domain at the end.",e:"log₂(x(x−2)) = 3 gives x(x−2) = 8, so x² − 2x − 8 = 0 and x = 4 or −2. Logs need positive inputs, so x = −2 is rejected. Check: log₂ 4 + log₂ 2 = 2 + 1 = 3."}
+);
+const FN={"x²":[x=>x*x,"all real x","y ≥ 0"],"x³":[x=>x*x*x,"all real x","all real y"],"1/x":[x=>x==0?NaN:1/x,"x ≠ 0","y ≠ 0"],"√x":[x=>x<0?NaN:Math.sqrt(x),"x ≥ 0","y ≥ 0"],"|x|":[Math.abs,"all real x","y ≥ 0"],"eˣ":[Math.exp,"all real x","y > 0"],"ln x":[x=>x<=0?NaN:Math.log(x),"x > 0","all real y"],"sin x":[Math.sin,"all real x","−1 ≤ y ≤ 1"],"cos x":[Math.cos,"all real x","−1 ≤ y ≤ 1"],"tan x":[Math.tan,"x ≠ π/2 + nπ","all real y"]};
+const CS=[["ca","a (vertical)",-3,3,1],["cb","b (horizontal)",-3,3,1],["cc","c (shift right)",-5,5,0],["cd","d (shift up)",-5,5,0],["cx","x₀ (test input)",-6,6,1]];
+function cplot(){
+  const nm=$("#cf").value,[g,dom,rng]=FN[nm],V=i=>+$("#"+i).value,a=V("ca"),b=V("cb"),c=V("cc"),d=V("cd"),x0=V("cx");
+  CS.forEach(q=>$("#"+q[0]+"v").textContent=V(q[0]).toFixed(1));
+  const f=x=>a*g(b*(x-c))+d,X=x=>150+25*x,Y=y=>150-25*y;
+  let s="";for(let i=-5;i<=5;i++)s+=`<line x1="${X(i)}" y1="0" x2="${X(i)}" y2="300" stroke="${i?"#1b2740":"#3a4a66"}"/><line x1="0" y1="${Y(i)}" x2="300" y2="${Y(i)}" stroke="${i?"#1b2740":"#3a4a66"}"/>`;
+  const path=(fn,col,w,dash)=>{let p="",pv=null;for(let i=0;i<=480;i++){const x=-6+12*i/480,y=fn(x);if(!isFinite(y)||Math.abs(y)>40){pv=null;continue}p+=(pv===null||Math.abs(y-pv)>6?"M":"L")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pv=y}return `<path d="${p}" fill="none" stroke="${col}" stroke-width="${w}" ${dash?'stroke-dasharray="5 4"':""}/>`};
+  s+=path(g,"#6c7a92",1.5,1)+path(f,"#f0b84d",2.5,0);
+  const y0=f(x0),ok=isFinite(y0)&&Math.abs(y0)<40;
+  if(ok)s+=`<line x1="${X(x0)}" y1="${Y(0)}" x2="${X(x0)}" y2="${Y(y0)}" stroke="#58d1c4" stroke-dasharray="3 3"/><line x1="${X(0)}" y1="${Y(y0)}" x2="${X(x0)}" y2="${Y(y0)}" stroke="#58d1c4" stroke-dasharray="3 3"/><circle cx="${X(x0)}" cy="${Y(y0)}" r="5" fill="#58d1c4"/>`;
+  $("#csv").innerHTML=s;
+  const T=[];if(a==0)T.push("flattened to the horizontal line y = d");else{if(Math.abs(a)!=1)T.push(`stretched vertically by ${fmt(Math.abs(a))}`.replace("stretched",Math.abs(a)>1?"stretched":"squashed"));if(a<0)T.push("flipped upside down")}
+  if(b==0)T.push("collapsed: b = 0 sends every x to the same input");else{if(Math.abs(b)!=1)T.push(`${Math.abs(b)>1?"squashed":"stretched"} horizontally by a factor ${fmt(1/Math.abs(b))}`);if(b<0)T.push("mirrored left–right")}
+  if(c)T.push(`shifted ${c>0?"right":"left"} ${fmt(Math.abs(c))}`);if(d)T.push(`shifted ${d>0?"up":"down"} ${fmt(Math.abs(d))}`);
+  $("#cout").innerHTML=`<div class="step">f(x) = ${fmt(a)}·g(${fmt(b)}(x ${c<0?"+":"−"} ${fmt(Math.abs(c))})) + ${fmt(d)}, &nbsp; g(x) = ${nm}</div><p>${T.length?"Compared with g (grey dashed): "+T.join("; ")+".":"Identical to g."}</p><p class="mute">Base domain of g: ${dom}. Base range: ${rng}. For f, the inner value u = b(x − c) must lie in g’s domain; the range is g’s range multiplied by a and shifted by d.</p>`+(ok?`<div class="step">f(${fmt(x0)}) = ${fmt(y0)}</div>`:isFinite(y0)?`<p class="mute">f(${fmt(x0)}) = ${fmt(y0)} (off the visible window).</p>`:`<p class="err">f(${fmt(x0)}) is undefined: the input b(x − c) = ${fmt(b*(x0-c))} is outside the domain of g (${dom}).</p>`)}
+function crst(){CS.forEach(q=>$("#"+q[0]).value=q[4]);cplot()}
+function c1(){
+  $("#v").innerHTML=`<p class="mute">Track B · Calculus · Module 1</p><h1>Functions: the language calculus speaks</h1>
+  <h2>1 · The big idea</h2><p>A function is a rule that takes an input and gives back exactly one output. Think of a machine: put in 3, out comes f(3). Calculus is the study of how the output <em>changes</em> when the input changes, so before we study change we must read and shape functions fluently.</p>
+  <h2>2 · Why it exists</h2><p>Galileo noticed that a falling stone covers distance proportional to time squared. Descartes and Newton turned such relationships into graphs and formulas. Once distance is a function of time, you can ask how fast it is changing at one instant, which is the question that started calculus.</p>
+  <h2>3 · Visual intuition</h2><p>The graph of f is every point (x, f(x)). The <b>vertical line test</b> checks that a curve is a function: a vertical line must hit it at most once, because one input has one output. A circle fails this test; a parabola passes.</p>
+  <h2>4 · Notation and families</h2><div class="card"><p>• <b>f(x)</b> is read “f of x”, the output for input x. <b>Domain</b>: allowed inputs. <b>Range</b>: outputs that actually occur.<br>• <b>Composition</b> (f∘g)(x) = f(g(x)): inside function first. Order matters.<br>• <b>Inverse</b> f⁻¹ undoes f, as with matrices.<br>• <b>Polynomial</b>: 2x³ − x + 5. <b>Rational</b>: a ratio of polynomials, undefined where the denominator is 0.<br>• <b>Exponential</b> aˣ: constant ratio growth. <b>Logarithm</b>: logₐ x is its inverse, defined for x > 0.<br>• <b>Trigonometric</b>: sin and cos are the coordinates of a point travelling round the unit circle; they repeat every 2π and stay between −1 and 1.</p></div>
+  <h2>5 · Derivation: why transformations behave as they do</h2><p>Why does f(x − 2) shift the graph <em>right</em> by 2? Let h(x) = f(x − 2). Then h(5) = f(3): the new graph at x = 5 shows what the old graph showed at x = 3. Every feature appears 2 units later, so to the right. Similarly the general form</p>
+  <div class="step">y = a·g( b(x − c) ) + d</div>
+  <p>acts in this order on a point of g: b rescales the input (horizontally, by 1/b), c shifts it right, a rescales the output (vertically) and d lifts it. Logarithms come from the exponent law aˣ·aʸ = aˣ⁺ʸ: since log undoes the exponent, log(MN) = log M + log N, turning multiplication into addition.</p>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> f(x) = 2x² − 3. f(−2) = 2·4 − 3 = 5. Domain: all real x. Since x² ≥ 0, f(x) ≥ −3, so the range is y ≥ −3.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> g(x) = √(x − 1) + 2. Need x − 1 ≥ 0, so domain x ≥ 1. The root is ≥ 0, so the range is y ≥ 2. It is the graph of √x shifted right 1 and up 2, starting at the point (1, 2).</div>
+  <div class="card"><span class="lbl">Challenging.</span> f(x) = 1/(x − 2) and g(x) = x². (f∘g)(x) = 1/(x² − 2), undefined when x² = 2, so the domain is x ≠ ±√2. Reversed, (g∘f)(x) = 1/(x − 2)², domain x ≠ 2. Two different functions: composition order matters. Check with x = 3: f(g(3)) = 1/7 but g(f(3)) = 1.</div>
+  <h2>7 · Interactive experiment: the function plotter</h2><p>Choose a base function g (grey dashed), then bend it with a, b, c, d (amber). Move the test input x₀ to see its output; if x₀ is outside the domain, the plotter says so. Try 1/x with c = 2, then √x with b = −1: where does the graph live?</p>
+  <div class="card"><div class="row">Base function g <select id="cf">${Object.keys(FN).map(k=>`<option>${k}</option>`).join("")}</select><button class="g" onclick="crst()">Reset</button></div>
+  ${CS.map(q=>`<div class="row"><label style="min-width:130px">${q[1]}</label><input type="range" id="${q[0]}" min="${q[2]}" max="${q[3]}" step="0.1" value="${q[4]}" style="flex:1;min-width:140px"><span id="${q[0]}v" class="m">${q[4]}</span></div>`).join("")}
+  <svg id="csv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="function graph"></svg><div id="cout"></div></div>
+  <h2>8 · In the real world</h2><p>Projectile height is a quadratic in time. Bacteria and money in a bank grow exponentially. Earthquake and sound scales (Richter, decibels) and acidity (pH) are logarithms, because they compress huge ranges. Sound, light, alternating current and the seasons are sine waves with a shifted, stretched form a·sin(b(x − c)) + d.</p>
+  <h2>9 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r13","Explain why the graph of f(x + 3) moves left, even though it looks like a plus sign."],["r14","Give an example of a relation that is not a function, and say which input breaks the rule."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>h(x) = f(x + 3) gives h(0) = f(3): the new graph at 0 shows what the old graph showed at 3, so every feature appears 3 units earlier, to the left. A circle x² + y² = 25 is not a function: x = 3 gives both y = 4 and y = −4, so one input has two outputs.</p></details>
+  <h2>10 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>11 · Summary</h2><div class="card"><p>A function gives one output per input; the domain says which inputs are allowed and the range which outputs occur. Composition applies one function inside another, in a definite order. The form a·g(b(x − c)) + d reshapes any graph: b and c act on the input, a and d on the output. Polynomials, rational functions, exponentials, logarithms and trigonometric functions are the families we will differentiate and integrate. Next: limits, the idea that makes change precise.</p>
+  <button class="b" onclick="S.done.c1=1;save();this.textContent='Module complete ✓'">Mark module complete</button></div>`;
+  document.querySelectorAll("#cf,#ca,#cb,#cc,#cd,#cx").forEach(e=>e.oninput=e.onchange=cplot);
+  cplot();curM=7;qs()}
+
+/* ---------- Calculus 2: limits ---------- */
+Q.push(
+ {id:"q41",m:8,lv:1,t:"mc",q:"What does lim (x→a) f(x) = L mean?",o:["f(a) equals L","f(x) gets arbitrarily close to L as x gets close to a (x ≠ a)","x equals a","f is continuous at a"],a:1,h:"A limit describes the trend of the outputs near a, not the value at a itself.",e:"The limit asks where f(x) is heading as x approaches a, without ever needing x = a. f(a) may even be undefined, as in (x²−1)/(x−1) at x = 1."},
+ {id:"q42",m:8,lv:2,t:"num",q:"Find lim (x→3) (x² − 9)/(x − 3).",a:6,h:"Substituting gives 0/0. Factor the numerator.",e:"x² − 9 = (x−3)(x+3). For x ≠ 3 the fraction equals x + 3, which approaches 6."},
+ {id:"q43",m:8,lv:2,t:"num",q:"Find lim (x→2) (x² + x − 6)/(x − 2).",a:5,h:"Factor x² + x − 6 into two brackets, one of which is (x − 2).",e:"x² + x − 6 = (x+3)(x−2). Cancel (x−2) to get x + 3, which tends to 5."},
+ {id:"q44",m:8,lv:1,t:"mc",q:"f(x) = x + 1 for x < 2 and f(x) = x² for x ≥ 2. What is lim (x→2) f(x)?",o:["3","4","It does not exist","7"],a:2,h:"Find the left-hand limit and the right-hand limit separately.",e:"From the left, x + 1 → 3. From the right, x² → 4. The one-sided limits disagree, so the limit does not exist (a jump)."},
+ {id:"q45",m:8,lv:2,t:"num",q:"Find lim (x→∞) (4x³ + x)/(2x³ − 5).",a:2,h:"Divide the top and bottom by the highest power of x, x³.",e:"(4 + 1/x²)/(2 − 5/x³). The 1/x² and 5/x³ terms tend to 0, leaving 4/2 = 2."},
+ {id:"q46",m:8,lv:3,t:"num",q:"f(x) = kx + 1 for x < 2 and f(x) = x² − k for x ≥ 2. For which k is f continuous at x = 2?",a:1,h:"Continuity needs left limit = right limit = f(2). Set the two expressions equal at x = 2.",e:"Left limit: 2k + 1. f(2) and right limit: 4 − k. Equal when 2k + 1 = 4 − k, so 3k = 3 and k = 1."}
+);
+const LP=[
+ {n:"(x² − 1)/(x − 1)",f:x=>(x*x-1)/(x-1),a:1,L:"2",Ln:2,note:"Substituting gives 0/0. Factor the top as (x−1)(x+1) and cancel: allowed because a limit never uses x = 1 itself. What remains, x + 1, tends to 2. The graph has a hole at (1, 2)."},
+ {n:"sin x / x",f:x=>Math.sin(x)/x,a:0,L:"1",Ln:1,note:"Direct substitution gives 0/0. A geometric squeeze on the unit circle proves the limit is 1 (angles in radians). The table shows it numerically."},
+ {n:"|x| / x",f:x=>Math.abs(x)/x,a:0,L:"does not exist",Ln:null,note:"From the right the value is +1; from the left it is −1. The one-sided limits disagree, so there is no single limit: a jump."},
+ {n:"1 / x²",f:x=>1/(x*x),a:0,L:"+∞ (no finite limit)",Ln:null,note:"The values grow without bound from both sides: an infinite limit, shown by a vertical asymptote at x = 0."},
+ {n:"(√(x+4) − 2)/x",f:x=>(Math.sqrt(x+4)-2)/x,a:0,L:"1/4",Ln:0.25,note:"0/0 again. Multiply top and bottom by the conjugate (√(x+4) + 2): the top becomes x, which cancels, leaving 1/(√(x+4) + 2), which tends to 1/4."},
+ {n:"(1 − cos x)/x²",f:x=>(1-Math.cos(x))/(x*x),a:0,L:"1/2",Ln:0.5,note:"0/0. Rewrite 1 − cos x = 2 sin²(x/2) to get (1/2)·(sin(x/2)/(x/2))², which tends to 1/2."},
+ {n:"sin(1/x)",f:x=>Math.sin(1/x),a:0,L:"does not exist",Ln:null,note:"As x→0 the input 1/x races to infinity, so the value oscillates between −1 and 1 infinitely often and never settles (the plot is an aliased squiggle)."},
+ {n:"(3x² + 2x)/(x² + 5), x→∞",f:x=>(3*x*x+2*x)/(x*x+5),a:Infinity,L:"3",Ln:3,note:"Divide top and bottom by x²: (3 + 2/x)/(1 + 5/x²). The 1/x terms vanish, leaving 3. The line y = 3 is a horizontal asymptote."},
+ {n:"x² + 1",f:x=>x*x+1,a:2,L:"5",Ln:5,note:"Polynomials are continuous, so the limit is found by direct substitution: f(2) = 5."}
+];
+const qv=v=>isFinite(v)?String(+v.toPrecision(6)):isNaN(v)?"undefined":v>0?"+∞":"−∞";
+function lplot(){
+  const p=LP[+$("#lp").value],t=+$("#lt").value,inf=p.a===Infinity,f=p.f,h=Math.pow(10,-t);
+  const x0=inf?0:p.a-2,x1=inf?30:p.a+2,N=700,ys=[];
+  for(let i=0;i<=N;i++){const y=f(x0+(x1-x0)*i/N);if(isFinite(y)&&Math.abs(y)<=20)ys.push(y)}
+  let lo=ys.length?Math.min(...ys):-1,hi=ys.length?Math.max(...ys):1;if(p.Ln!==null){lo=Math.min(lo,p.Ln);hi=Math.max(hi,p.Ln)}if(hi-lo<2){const m=(hi+lo)/2;lo=m-1;hi=m+1}
+  const pad=(hi-lo)*.1;lo-=pad;hi+=pad;
+  const X=x=>10+280*(x-x0)/(x1-x0),Y=y=>290-280*(y-lo)/(hi-lo);let s="";
+  if(lo<0&&hi>0)s+=`<line x1="0" y1="${Y(0)}" x2="300" y2="${Y(0)}" stroke="#3a4a66"/>`;
+  if(x0<0&&x1>0)s+=`<line x1="${X(0)}" y1="0" x2="${X(0)}" y2="300" stroke="#3a4a66"/>`;
+  if(!inf)s+=`<line x1="${X(p.a)}" y1="0" x2="${X(p.a)}" y2="300" stroke="#26344d" stroke-dasharray="4 4"/>`;
+  if(p.Ln!==null)s+=`<line x1="0" y1="${Y(p.Ln)}" x2="300" y2="${Y(p.Ln)}" stroke="#6fcf8e" stroke-dasharray="5 4"/>`;
+  let d="",pv=null;for(let i=0;i<=N;i++){const x=x0+(x1-x0)*i/N,y=f(x);if(!isFinite(y)||y<lo-5||y>hi+5){pv=null;continue}d+=(pv===null||Math.abs(y-pv)>(hi-lo)*.5?"M":"L")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pv=y}
+  s+=`<path d="${d}" fill="none" stroke="#f0b84d" stroke-width="2"/>`;
+  if(!inf&&p.Ln!==null&&isNaN(f(p.a)))s+=`<circle cx="${X(p.a)}" cy="${Y(p.Ln)}" r="5" fill="#0b111c" stroke="#f0b84d" stroke-width="2"/>`;
+  const pts=inf?[10**t]:[p.a-h,p.a+h];
+  pts.forEach((x,i)=>{const y=f(x);if(isFinite(y)&&x>=x0&&x<=x1&&y>=lo&&y<=hi)s+=`<circle cx="${X(x)}" cy="${Y(y)}" r="5" fill="${i?"#58d1c4":"#e6ebf3"}"/>`});
+  s+=`<text x="6" y="296" fill="#93a1b8" font-size="10">x: ${qv(x0)} to ${qv(x1)}</text><text x="6" y="12" fill="#93a1b8" font-size="10">y: ${qv(lo)} to ${qv(hi)}</text>`;
+  $("#lsv").innerHTML=s;$("#ltv").textContent=inf?"x = "+qv(10**t):"h = "+qv(h);
+  const td="style='padding:3px 8px;text-align:right'";
+  let tb=inf?[1,2,3,4,5].map(k=>`<tr><td ${td}>${qv(10**k)}</td><td ${td}>${qv(f(10**k))}</td></tr>`).join(""):[1,.1,.01,.001,.0001].map(k=>`<tr><td ${td}>${qv(k)}</td><td ${td}>${qv(f(p.a-k))}</td><td ${td}>${qv(f(p.a+k))}</td></tr>`).join("");
+  const head=inf?`<tr><th ${td}>x</th><th ${td}>f(x)</th></tr>`:`<tr><th ${td}>h</th><th ${td}>f(a − h)</th><th ${td}>f(a + h)</th></tr>`;
+  let cont="";
+  if(!inf){const fa=f(p.a);cont=p.Ln!==null&&isFinite(fa)&&Math.abs(fa-p.Ln)<1e-9?`<p class="ok">f(${p.a}) = ${qv(fa)} equals the limit: f is continuous at ${p.a}.</p>`:p.Ln!==null?`<p class="err">The limit exists (${p.L}) but f(${p.a}) is undefined or different: a removable discontinuity, a hole that could be filled.</p>`:`<p class="err">No finite limit, so f is not continuous at ${p.a}.</p>`}
+  $("#lout").innerHTML=`<div class="step">f(x) = ${p.n}, &nbsp; ${inf?"x → ∞":"x → "+p.a}</div><table style="border-collapse:collapse;font-family:Cambria,Georgia,serif">${head}${tb}</table><div class="step">Limit: ${p.L}</div><p>${p.note}</p>${cont}<p class="mute">White dot: left side of a (or your x). Teal dot: right side. Green dashed line: the limit value. A hollow circle marks a missing point.</p>`}
+function c2(){
+  $("#v").innerHTML=`<p class="mute">Track B · Calculus · Module 2</p><h1>Limits: what happens as we get close</h1>
+  <h2>1 · The big idea</h2><p>A limit answers one question: <em>as the input gets closer and closer to a, what value is the output heading toward?</em> It does not matter what happens exactly at a, or whether the function is even defined there. Limits let us talk about “infinitely close” without dividing by zero.</p>
+  <h2>2 · Why it exists</h2><p>How fast is a car moving at one instant? Speed is distance ÷ time, but over a single instant both are zero: 0/0, meaningless. Newton and Leibniz needed to ask what the average speed approaches as the time interval shrinks. That “approaches” is a limit. Zeno’s ancient paradoxes (you can never reach the wall since you must first cover half the distance) are really about infinite sums approaching a limit.</p>
+  <h2>3 · Visual intuition</h2><p>Walk along the graph towards x = a from both sides. If both walkers head to the same height L, that height is the limit, even if there is a hole in the graph exactly at a. If they head to different heights, or off to infinity, or never settle, there is no (finite) limit.</p>
+  <h2>4 · Definitions and notation</h2><div class="card"><p>• <b>lim (x→a) f(x) = L</b>: f(x) gets as close to L as we like by taking x close enough to a, with x ≠ a.<br>• <b>One-sided limits</b>: x→a⁺ (from the right) and x→a⁻ (from the left). The two-sided limit exists exactly when both agree.<br>• <b>Infinite limit</b>: f(x) grows without bound near a (vertical asymptote). <b>Limit at infinity</b>: lim (x→∞) f(x) = L means the graph flattens onto y = L (horizontal asymptote).<br>• <b>Continuous at a</b> means three things hold: f(a) is defined, the limit exists, and they are equal. A continuous graph can be drawn without lifting the pen.<br>• <b>Indeterminate forms</b> such as 0/0 and ∞/∞ have no automatic value. They are a signal to do more algebra, not an answer.</p></div>
+  <h2>5 · Derivation: why cancelling is legal</h2><p>(x² − 1)/(x − 1) and x + 1 are equal for every x ≠ 1, and they differ only at x = 1, where the first is undefined. A limit never looks at x = 1 itself, only at nearby values, where the two functions are identical. So they have the same limit, 2. That is the whole justification for “factor, cancel, substitute”. The <b>limit laws</b> (limit of a sum is the sum of limits; likewise for differences, products, constant multiples and quotients with non-zero denominator) follow because closeness to L and to M gives closeness of f+g to L+M. This is why polynomials can be handled by direct substitution.</p>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> lim (x→2) (3x + 1). Polynomials are continuous, so substitute: 3·2 + 1 = 7. Table check: x = 1.99 → 6.97, x = 2.01 → 7.03. Both sides head to 7.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> lim (x→3) (x² − 9)/(x − 3). Substitution gives 0/0. Factor: (x−3)(x+3)/(x−3) = x + 3 for x ≠ 3. Limit = 6.</div>
+  <div class="card"><span class="lbl">Challenging.</span> lim (x→0) (√(x+4) − 2)/x. Direct substitution: 0/0, and no factoring helps. Multiply by the <b>conjugate</b>: (√(x+4) − 2)(√(x+4) + 2) = (x + 4) − 4 = x, so the fraction is x/(x(√(x+4)+2)) = 1/(√(x+4)+2) → 1/4. At infinity: lim (3x² + 2x)/(x² + 5) = lim (3 + 2/x)/(1 + 5/x²) = 3, since 1/x → 0 as x → ∞. Rule of thumb: compare the highest powers.</div>
+  <h2>7 · Interactive experiment: the limit explorer</h2><p>Choose a function, then drag the slider to push x towards a. Watch the two dots close in, and read the table. Compare “removable hole” (1st), “jump” (3rd), “infinite” (4th) and “never settles” (7th). Which ones have a limit but are not continuous?</p>
+  <div class="card"><div class="row">Function <select id="lp">${LP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div><div class="row"><label style="min-width:110px">Closeness</label><input type="range" id="lt" min="0" max="5" step="0.1" value="1" style="flex:1;min-width:140px"><span id="ltv" class="m"></span></div>
+  <svg id="lsv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="function near the limit point"></svg><div id="lout"></div></div>
+  <h2>8 · In the real world</h2><p>Speedometers and instantaneous rates are limits of average rates. A drug’s concentration in the blood approaches a steady level: a limit at infinity. A capacitor charging, a cooling cup of tea, and terminal velocity all level off towards limits. Engineers read vertical asymptotes as resonance or failure points, where a quantity blows up.</p>
+  <h2>9 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r15","Explain why lim (x→1) (x²−1)/(x−1) can equal 2 even though the function is undefined at x = 1."],["r16","List the three conditions for a function to be continuous at a point. Give an example failing each."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>The limit only looks at values near 1, not at 1 itself. Near 1 the function equals x + 1, which heads to 2, so the limit is 2 even with a hole at x = 1. Continuity needs: f(a) defined (fails for 1/x at 0); the limit exists (fails for |x|/x, a jump); and the two are equal (fails for the hole in (x²−1)/(x−1) if you define f(1) = 5).</p></details>
+  <h2>10 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>11 · Summary</h2><div class="card"><p>A limit is the value a function approaches, never the value at the point itself. Two-sided limits exist only if the left and right agree. Indeterminate forms like 0/0 call for algebra: factor, rationalise, or divide by the highest power. At infinity, compare the leading terms. A function is continuous at a when f(a) exists, the limit exists and they match. The next module turns the limit of an average rate into the derivative.</p>
+  <button class="b" onclick="S.done.c2=1;save();this.textContent='Module complete ✓'">Mark module complete</button></div>`;
+  document.querySelectorAll("#lp,#lt").forEach(e=>e.oninput=e.onchange=lplot);
+  lplot();curM=8;qs()}
+
+/* ---------- Calculus 3: differentiation ---------- */
+Q.push(
+ {id:"q47",m:9,lv:1,t:"mc",q:"Geometrically, what does f′(a) represent?",o:["The height of the graph at x = a","The slope of the tangent line to the graph at x = a","The area under the graph up to a","The average value of f"],a:1,h:"It is the limit of secant-line slopes as the second point slides into the first.",e:"f′(a) = lim (h→0) [f(a+h) − f(a)]/h: the limit of secant slopes, which is the slope of the tangent line. It is also the instantaneous rate of change of f at a."},
+ {id:"q48",m:9,lv:2,t:"num",q:"f(x) = 2x³ − 5x + 1. Find f′(2).",a:19,h:"Differentiate term by term with the power rule, then substitute x = 2.",e:"f′(x) = 6x² − 5. f′(2) = 6·4 − 5 = 19."},
+ {id:"q49",m:9,lv:2,t:"num",q:"y = (x² + 1)(x − 3). Use the product rule to find dy/dx at x = 2.",a:1,h:"(fg)′ = f′g + fg′ with f = x² + 1 and g = x − 3.",e:"y′ = 2x(x−3) + (x²+1)(1). At x = 2: 4(−1) + 5 = 1."},
+ {id:"q50",m:9,lv:2,t:"num",q:"y = (2x + 1)⁴. Find dy/dx at x = 1.",a:216,h:"Chain rule: differentiate the outer power, then multiply by the derivative of the inside.",e:"y′ = 4(2x+1)³ · 2 = 8(2x+1)³. At x = 1: 8·27 = 216."},
+ {id:"q51",m:9,lv:2,t:"num",q:"y = x/(x + 1). Use the quotient rule to find dy/dx at x = 1 (decimal).",a:0.25,h:"(f/g)′ = (f′g − fg′)/g² with f = x and g = x + 1.",e:"y′ = [1·(x+1) − x·1]/(x+1)² = 1/(x+1)². At x = 1: 1/4 = 0.25."},
+ {id:"q52",m:9,lv:3,t:"num",q:"The circle x² + y² = 25 passes through (3, 4). Use implicit differentiation to find the slope of the tangent there (decimal).",a:-0.75,h:"Differentiate both sides with respect to x, treating y as a function of x: d(y²)/dx = 2y·dy/dx.",e:"2x + 2y·y′ = 0, so y′ = −x/y. At (3, 4): −3/4 = −0.75. Check: the radius to (3,4) has slope 4/3, and the tangent is perpendicular, with slope −3/4. ✓"},
+ {id:"q53",m:9,lv:3,t:"mc",q:"What is the derivative of f(x) = |x| at x = 0?",o:["0","1","−1","It does not exist"],a:3,h:"Compare the slope of the graph just left and just right of 0.",e:"The slope is −1 for x < 0 and +1 for x > 0. At 0 the graph has a corner, so the secant slopes from the two sides disagree and the limit does not exist. |x| is continuous at 0 but not differentiable there."}
+);
+const DP=[
+ {n:"x²",f:x=>x*x,d:x=>2*x,dn:"2x",rule:"power rule"},
+ {n:"x³ − 3x",f:x=>x**3-3*x,d:x=>3*x*x-3,dn:"3x² − 3",rule:"power rule and sum rule"},
+ {n:"√x",f:x=>x<0?NaN:Math.sqrt(x),d:x=>x<0?NaN:.5/Math.sqrt(x),dn:"1/(2√x)",rule:"power rule with exponent ½ (the tangent at 0 is vertical)"},
+ {n:"1/x",f:x=>x==0?NaN:1/x,d:x=>x==0?NaN:-1/(x*x),dn:"−1/x²",rule:"power rule with exponent −1"},
+ {n:"sin x",f:Math.sin,d:Math.cos,dn:"cos x",rule:"trigonometric derivative"},
+ {n:"eˣ",f:Math.exp,d:Math.exp,dn:"eˣ",rule:"eˣ is its own derivative: its slope always equals its height"},
+ {n:"ln x",f:x=>x>0?Math.log(x):NaN,d:x=>x>0?1/x:NaN,dn:"1/x",rule:"logarithm derivative"},
+ {n:"x·sin x",f:x=>x*Math.sin(x),d:x=>Math.sin(x)+x*Math.cos(x),dn:"sin x + x cos x",rule:"product rule"},
+ {n:"sin(x²)",f:x=>Math.sin(x*x),d:x=>2*x*Math.cos(x*x),dn:"2x cos(x²)",rule:"chain rule"},
+ {n:"x²/(x + 1)",f:x=>x==-1?NaN:x*x/(x+1),d:x=>x==-1?NaN:(x*x+2*x)/((x+1)**2),dn:"(x² + 2x)/(x + 1)²",rule:"quotient rule"},
+ {n:"|x|",f:Math.abs,d:x=>x==0?NaN:Math.sign(x),dn:"1 for x > 0, −1 for x < 0, undefined at 0",rule:"a corner at 0: not differentiable there"}
+];
+function dplot(){
+  const p=DP[+$("#dp").value],x0=+$("#dx").value,t=+$("#dh").value,h=Math.pow(10,.3-t),f=p.f;
+  $("#dxv").textContent=x0.toFixed(1);$("#dhv").textContent="h = "+qv(h);
+  const ys=[];for(let i=0;i<=400;i++){const y=f(-4+8*i/400);if(isFinite(y)&&Math.abs(y)<=12)ys.push(y)}
+  let lo=ys.length?Math.min(...ys):-1,hi=ys.length?Math.max(...ys):1;if(hi-lo<2){const m=(hi+lo)/2;lo=m-1;hi=m+1}const pd=(hi-lo)*.1;lo-=pd;hi+=pd;
+  const X=x=>10+280*(x+4)/8,Y=y=>290-280*(y-lo)/(hi-lo);let s="";
+  if(lo<0&&hi>0)s+=`<line x1="0" y1="${Y(0)}" x2="300" y2="${Y(0)}" stroke="#3a4a66"/>`;s+=`<line x1="${X(0)}" y1="0" x2="${X(0)}" y2="300" stroke="#3a4a66"/>`;
+  let d="",pv=null;for(let i=0;i<=600;i++){const x=-4+8*i/600,y=f(x);if(!isFinite(y)||y<lo-8||y>hi+8){pv=null;continue}d+=(pv===null||Math.abs(y-pv)>(hi-lo)*.5?"M":"L")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pv=y}
+  s+=`<path d="${d}" fill="none" stroke="#6c8cc0" stroke-width="2"/>`;
+  const y0=f(x0),o=$("#dout");
+  if(!isFinite(y0)){$("#dsv").innerHTML=s;o.innerHTML=`<p class="err">f is undefined at x = ${x0.toFixed(1)}, so there is no point and no tangent. Move the slider.</p>`;return}
+  const y1=f(x0+h),ms=(y1-y0)/h,ml=(y0-f(x0-h))/h,mt=p.d(x0),ln=(m,c,w)=>`<line x1="${X(-4)}" y1="${Y(y0+m*(-4-x0))}" x2="${X(4)}" y2="${Y(y0+m*(4-x0))}" stroke="${c}" stroke-width="${w}"/>`;
+  if(isFinite(ms))s+=ln(ms,"#f0b84d",1.5)+(isFinite(y1)?`<circle cx="${X(x0+h)}" cy="${Y(y1)}" r="4" fill="#f0b84d"/>`:"");
+  if(isFinite(mt))s+=ln(mt,"#58d1c4",2);
+  s+=`<circle cx="${X(x0)}" cy="${Y(y0)}" r="5" fill="#e6ebf3"/>`;$("#dsv").innerHTML=s;
+  o.innerHTML=`<div class="step">f(x) = ${p.n}, &nbsp; x₀ = ${x0.toFixed(1)}, &nbsp; f(x₀) = ${qv(y0)}</div><div class="step">Secant slope (amber) = [f(x₀+h) − f(x₀)]/h = (${qv(y1)} − ${qv(y0)})/${qv(h)} = ${qv(ms)}</div>`+(isFinite(mt)?`<div class="step">f′(x) = ${p.dn}, so f′(x₀) = ${qv(mt)} (tangent, teal)</div><p class="mute">Secant minus tangent slope: ${qv(ms-mt)}. Shrink h and watch it vanish.</p>`:`<p class="err">No finite tangent slope here (corner, vertical tangent or undefined). Slope from the right: ${qv(ms)}; from the left: ${qv(ml)}.</p>`)+`<p class="mute">Rule: ${p.rule}.</p>`}
+function c3(){
+  $("#v").innerHTML=`<p class="mute">Track B · Calculus · Module 3</p><h1>Differentiation: measuring change at an instant</h1>
+  <h2>1 · The big idea</h2><p>The <b>derivative</b> of a function at a point is how fast the output is changing there, per unit change in input. Geometrically it is the <b>slope of the tangent line</b>, the straight line that just touches the graph and best imitates it near that point. If f is a car’s position, f′ is its speedometer reading.</p>
+  <h2>2 · Why it exists</h2><p>Two old problems turned out to be one. Newton asked: how fast is something moving at an exact instant? Leibniz and Fermat asked: what is the slope of a curve at a single point? A straight line has one slope everywhere, but a curve’s slope changes, so you need a limit to pin it down at one spot.</p>
+  <h2>3 · Visual intuition</h2><p>Pick a point P on a curve and a second point Q a distance h to the right. The line through them is a <b>secant</b>, with slope (rise over run). Slide Q towards P: the secant swings round and settles into the tangent. The derivative is the limit of those secant slopes.</p>
+  <h2>4 · Definition and notation</h2><div class="step">f′(x) = lim (h→0) [ f(x + h) − f(x) ] / h</div>
+  <p>This difference quotient is 0/0 at h = 0, exactly the indeterminate form from Module 2, so we always simplify first. Other notation: dy/dx, d/dx of f. If the limit exists at x, f is <b>differentiable</b> there. Differentiable implies continuous, but not the other way round: |x| has a corner at 0, so no single tangent slope exists.</p>
+  <h2>5 · Derivations: where the rules come from</h2><div class="card"><p><b>Power rule.</b> For f(x) = x²: [(x+h)² − x²]/h = (2xh + h²)/h = 2x + h → 2x. In general (x+h)ⁿ = xⁿ + n xⁿ⁻¹h + (terms with h² or more), so the quotient tends to <b>n xⁿ⁻¹</b>.<br><br><b>Product rule.</b> f(x+h)g(x+h) − f(x)g(x) = f(x+h)[g(x+h) − g(x)] + g(x)[f(x+h) − f(x)]. Divide by h and let h→0: <b>(fg)′ = f g′ + g f′</b>. Both factors change, so both contribute.<br><br><b>Chain rule.</b> If y changes 3 times as fast as u, and u changes 2 times as fast as x, then y changes 6 times as fast as x. Rates multiply, like gears: <b>dy/dx = (dy/du)(du/dx)</b>, so (f(g(x)))′ = f′(g(x))·g′(x).<br><br><b>Quotient rule.</b> From the product and chain rules applied to f · g⁻¹: <b>(f/g)′ = (f′g − fg′)/g²</b>.<br><br><b>Trigonometric.</b> Expanding sin(x+h) = sin x cos h + cos x sin h, the quotient becomes sin x (cos h − 1)/h + cos x (sin h)/h. As h→0, (cos h − 1)/h → 0 and sin h / h → 1 (Module 2), leaving <b>cos x</b>.<br><br><b>Exponential and log.</b> There is a special base e ≈ 2.718 whose graph has slope equal to its height everywhere, so (eˣ)′ = eˣ. ln is its inverse, and the chain rule on e^(ln x) = x gives (ln x)′ = 1/x.</p></div>
+  <div class="card"><p><b>Rule sheet.</b> (c)′ = 0 · (xⁿ)′ = n xⁿ⁻¹ · (cf)′ = c f′ · (f±g)′ = f′±g′ · (sin x)′ = cos x · (cos x)′ = −sin x · (tan x)′ = sec²x · (eˣ)′ = eˣ · (aˣ)′ = aˣ ln a · (ln x)′ = 1/x</p></div>
+  <h2>6 · Implicit differentiation</h2><p>Sometimes y is tangled with x, like x² + y² = 25. Differentiate both sides with respect to x, remembering that y depends on x, so d(y²)/dx = 2y·(dy/dx) by the chain rule:</p><div class="step">2x + 2y·y′ = 0 ⇒ y′ = −x/y</div><p>No need to solve for y first.</p>
+  <h2>7 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> f(x) = x³ − 4x + 7. Term by term: f′(x) = 3x² − 4. At x = 2 the slope is 12 − 4 = 8, so the tangent rises 8 for every 1 across.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> y = x² sin x (product): y′ = 2x sin x + x² cos x. And y = (3x² + 1)⁵ (chain): outer power gives 5(3x²+1)⁴, inner derivative is 6x, so y′ = 30x(3x²+1)⁴.</div>
+  <div class="card"><span class="lbl">Challenging.</span> First principles for f(x) = 1/x: [1/(x+h) − 1/x]/h = [x − (x+h)]/[x(x+h)h] = −1/[x(x+h)] → <b>−1/x²</b>, matching the power rule with n = −1. Then on the circle x² + y² = 25 at (3, 4): y′ = −3/4. The tangent line is y − 4 = −(3/4)(x − 3), perpendicular to the radius, as geometry says it must be.</div>
+  <h2>8 · Interactive experiment: secant to tangent</h2><p>Choose a function, set x₀, then shrink h with the slider. The amber secant rotates onto the teal tangent, and the table compares its slope with the exact rule. Try |x| at 0, √x at 0 and x·sin x.</p>
+  <div class="card"><div class="row">Function <select id="dp">${DP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div>
+  <div class="row"><label style="min-width:110px">x₀</label><input type="range" id="dx" min="-3.5" max="3.5" step="0.1" value="1" style="flex:1;min-width:140px"><span id="dxv" class="m"></span></div>
+  <div class="row"><label style="min-width:110px">Shrink h</label><input type="range" id="dh" min="0" max="3" step="0.1" value="0" style="flex:1;min-width:140px"><span id="dhv" class="m"></span></div>
+  <svg id="dsv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="secant and tangent lines"></svg><div id="dout"></div></div>
+  <h2>9 · In the real world</h2><p>Velocity is the derivative of position and acceleration is the derivative of velocity. Economists call the derivative of cost the <em>marginal cost</em>. A population that grows in proportion to its size satisfies P′ = kP, whose solution is exponential. Doctors read the slope of a concentration curve as the rate a drug is absorbed. The next module uses f′ = 0 to find the best possible design.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r17","Why is the derivative defined as a limit rather than just plugging in h = 0?"],["r18","Explain the chain rule using the idea of rates multiplying, with your own example."]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>Putting h = 0 in [f(x+h) − f(x)]/h gives 0/0, which means nothing. The limit asks what the quotient approaches as h gets tiny but non-zero. Chain rule example: a bike’s wheel turns 3 times per pedal turn and you pedal 2 turns per second; the wheel turns 3 × 2 = 6 times per second. In general the rate of the outer quantity per x is the product of the two rates.</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>The derivative is the limit of the difference quotient: the instantaneous rate of change and the slope of the tangent. Every rule — power, product, quotient, chain, trigonometric, exponential and logarithmic — comes from that one limit. Implicit differentiation handles curves where y is not isolated. A function is not differentiable at corners, jumps or vertical tangents. The next module puts f′ to work: motion, maxima and minima, and optimization.</p>
+  <button class="b" onclick="S.done.c3=1;save();this.textContent='Module complete ✓'">Mark module complete</button></div>`;
+  document.querySelectorAll("#dp,#dx,#dh").forEach(e=>e.oninput=e.onchange=dplot);
+  dplot();curM=9;qs()}
+
+/* ---------- Calculus 4: applications ---------- */
+Q.push(
+ {id:"q54",m:10,lv:1,t:"mc",q:"An object has velocity v = 4 and acceleration a = 2 (same sign). What is happening?",o:["It is slowing down","It is speeding up","It is at rest","It is turning around"],a:1,h:"Acceleration is the rate of change of velocity. Which way is the velocity being pushed?",e:"v and a both positive: the velocity is positive and growing, so the object speeds up. If they had opposite signs, it would be slowing down."},
+ {id:"q55",m:10,lv:2,t:"num",q:"Position s(t) = t³ − 6t² + 9t. Find the velocity at t = 4.",a:9,h:"Velocity is the derivative of position.",e:"v(t) = 3t² − 12t + 9. v(4) = 48 − 48 + 9 = 9."},
+ {id:"q56",m:10,lv:2,t:"num",q:"f(x) = x³ − 3x² − 9x + 5 has a local minimum. At what x?",a:3,h:"Solve f′(x) = 0 for two critical points, then use f″ to see which is the minimum.",e:"f′ = 3x² − 6x − 9 = 3(x−3)(x+1), so x = −1 or 3. f″ = 6x − 6: f″(3) = 12 > 0 (min), f″(−1) = −12 < 0 (max). The minimum is at x = 3."},
+ {id:"q57",m:10,lv:2,t:"num",q:"What is the maximum value of f(x) = −x² + 6x + 1?",a:10,h:"Set f′(x) = 0 to find where the peak is, then evaluate f there.",e:"f′ = −2x + 6 = 0 gives x = 3. f″ = −2 < 0, so it is a maximum. f(3) = −9 + 18 + 1 = 10."},
+ {id:"q58",m:10,lv:3,t:"num",q:"You have 40 m of fencing to enclose a rectangular garden. What is the largest area possible (in m²)?",a:100,h:"If the width is x, the length is 20 − x. Write the area as a function of x and find its maximum.",e:"A(x) = x(20 − x) = 20x − x². A′ = 20 − 2x = 0 gives x = 10, and A″ = −2 < 0 confirms a maximum. A = 10·10 = 100. The best rectangle is a square."},
+ {id:"q59",m:10,lv:3,t:"num",q:"A spherical balloon is inflated so that its volume grows at 36π cm³/s. How fast is the radius growing (cm/s) when r = 3 cm?",a:1,h:"V = (4/3)πr³. Differentiate both sides with respect to time t using the chain rule.",e:"dV/dt = 4πr²·dr/dt. So 36π = 4π(9)·dr/dt = 36π·dr/dt, giving dr/dt = 1 cm/s."},
+ {id:"q60",m:10,lv:1,t:"mc",q:"On an interval where f″(x) < 0, how does the graph of f bend?",o:["Concave up, like a bowl","Concave down, like a frown","It is a straight line","It is increasing"],a:1,h:"f″ is the slope of f′. If f″ < 0, is the slope of f increasing or decreasing?",e:"f″ < 0 means f′ is decreasing: the tangent slope keeps getting smaller, so the graph curves downward like a frown (concave down)."}
+);
+const AP=[
+ {n:"x³ − 3x",f:x=>x**3-3*x,d:x=>3*x*x-3,dd:x=>6*x},
+ {n:"x⁴ − 2x²",f:x=>x**4-2*x*x,d:x=>4*x**3-4*x,dd:x=>12*x*x-4},
+ {n:"x³ (no extremum)",f:x=>x**3,d:x=>3*x*x,dd:x=>6*x},
+ {n:"x³ − 6x² + 9x (position s(t))",f:x=>x**3-6*x*x+9*x,d:x=>3*x*x-12*x+9,dd:x=>6*x-12},
+ {n:"sin x + x/2",f:x=>Math.sin(x)+x/2,d:x=>Math.cos(x)+.5,dd:x=>-Math.sin(x)},
+ {n:"x·e^(−x)",f:x=>x*Math.exp(-x),d:x=>(1-x)*Math.exp(-x),dd:x=>(x-2)*Math.exp(-x)},
+ {n:"x² − 4x + 3",f:x=>x*x-4*x+3,d:x=>2*x-4,dd:x=>2}
+];
+function roots(g){const r=[],N=800;for(let i=0;i<N;i++){let a=-4+8*i/N,b=-4+8*(i+1)/N,ga=g(a),gb=g(b);if(ga==0){if(!r.length||Math.abs(r[r.length-1]-a)>1e-6)r.push(a)}else if(ga*gb<0){for(let k=0;k<50;k++){const m=(a+b)/2,gm=g(m);if(ga*gm<=0)b=m;else{a=m;ga=gm}}const c=(a+b)/2;if(!r.length||Math.abs(r[r.length-1]-c)>1e-6)r.push(c)}}return r}
+function aplot(){
+  const p=AP[+$("#ap").value],x0=+$("#ax").value,f=p.f,d=p.d,dd=p.dd;$("#axv").textContent=x0.toFixed(1);
+  const ys=[];for(let i=0;i<=400;i++){const y=f(-4+8*i/400);if(isFinite(y)&&Math.abs(y)<=15)ys.push(y)}
+  let lo=Math.min(...ys),hi=Math.max(...ys);if(hi-lo<2){const m=(hi+lo)/2;lo=m-1;hi=m+1}const pd=(hi-lo)*.1;lo-=pd;hi+=pd;
+  const X=x=>10+280*(x+4)/8,Y=y=>290-280*(y-lo)/(hi-lo);let s="",inc="",dec="";
+  if(lo<0&&hi>0)s+=`<line x1="0" y1="${Y(0)}" x2="300" y2="${Y(0)}" stroke="#3a4a66"/>`;s+=`<line x1="${X(0)}" y1="0" x2="${X(0)}" y2="300" stroke="#3a4a66"/>`;
+  for(let i=1;i<=800;i++){const xa=-4+8*(i-1)/800,xb=-4+8*i/800,ya=f(xa),yb=f(xb);if(!isFinite(ya)||!isFinite(yb)||ya<lo-9||yb<lo-9||ya>hi+9||yb>hi+9)continue;const sg=`M${X(xa).toFixed(1)} ${Y(ya).toFixed(1)}L${X(xb).toFixed(1)} ${Y(yb).toFixed(1)}`;if(d((xa+xb)/2)>=0)inc+=sg;else dec+=sg}
+  s+=`<path d="${inc}" stroke="#58d1c4" stroke-width="2.5" fill="none"/><path d="${dec}" stroke="#f0b84d" stroke-width="2.5" fill="none"/>`;
+  const cr=roots(d),inf=roots(dd).filter(c=>Math.abs(dd(c-.01))>0||true),L=[];
+  cr.forEach(c=>{const sec=dd(c);let k;if(Math.abs(sec)>1e-6)k=sec<0?"max":"min";else{const l=d(c-.05),r=d(c+.05);k=l>0&&r<0?"max":l<0&&r>0?"min":"flat"}
+    const col=k=="max"?"#6fcf8e":k=="min"?"#ef6f6c":"#e6ebf3";s+=`<circle cx="${X(c)}" cy="${Y(f(c))}" r="5" fill="${col}"/>`;
+    L.push(`x = ${qv(+c.toFixed(4))}: ${k=="max"?"local maximum":k=="min"?"local minimum":"stationary point, not an extremum"}, f = ${qv(f(c))}, f″ = ${qv(dd(c))}`)});
+  const iv=inf.filter(c=>dd(c-.01)*dd(c+.01)<0);iv.forEach(c=>s+=`<circle cx="${X(c)}" cy="${Y(f(c))}" r="5" fill="none" stroke="#e6ebf3" stroke-width="2"/>`);
+  const pts=[-4,...cr,4],rg=[];for(let i=0;i<pts.length-1;i++){if(pts[i+1]-pts[i]<1e-6)continue;const m=(pts[i]+pts[i+1])/2;rg.push(`${d(m)>=0?"increasing":"decreasing"} on (${qv(+pts[i].toFixed(3))}, ${qv(+pts[i+1].toFixed(3))})`)}
+  const y0=f(x0),m0=d(x0);s+=`<line x1="${X(x0-1)}" y1="${Y(y0-m0)}" x2="${X(x0+1)}" y2="${Y(y0+m0)}" stroke="#e6ebf3" stroke-width="1.5"/><circle cx="${X(x0)}" cy="${Y(y0)}" r="4" fill="#e6ebf3"/>`;
+  $("#asv").innerHTML=s;
+  const c0=dd(x0);
+  $("#aout").innerHTML=`<div class="step">f(x) = ${p.n}</div><p><span class="lbl">Critical points (f′ = 0):</span></p>${L.length?L.map(t=>`<div class="step">${t}</div>`).join(""):"<p class=\"mute\">None in the window −4 ≤ x ≤ 4.</p>"}<p><span class="lbl">Behaviour (teal = rising, amber = falling):</span> ${rg.join("; ")}.</p><p><span class="lbl">Concavity changes (hollow circles):</span> ${iv.length?iv.map(c=>"x = "+qv(+c.toFixed(3))).join(", "):"none in the window"}.</p><div class="step">At x = ${x0.toFixed(1)}: f′ = ${qv(m0)} (${Math.abs(m0)<1e-9?"flat":m0>0?"rising":"falling"}), f″ = ${qv(c0)} (${Math.abs(c0)<1e-9?"inflection candidate":c0>0?"concave up, a bowl":"concave down, a frown"})</div><p class="mute">Green dot: local maximum. Red dot: local minimum. White dot: flat but not an extremum. Window is limited to −4 ≤ x ≤ 4, so look at the ends separately.</p>`}
+function bplot(){
+  const x=+$("#bx").value,V=u=>u*(12-2*u)**2,dV=u=>12*(u-2)*(u-6);$("#bxv").textContent=x.toFixed(1)+" cm";
+  const X=u=>10+280*u/6,Y=v=>290-280*v/150;let s=`<line x1="0" y1="290" x2="300" y2="290" stroke="#3a4a66"/>`,pa="";
+  for(let i=0;i<=120;i++){const u=6*i/120;pa+=(i?"L":"M")+X(u).toFixed(1)+" "+Y(V(u)).toFixed(1)}
+  s+=`<path d="${pa}" fill="none" stroke="#6c8cc0" stroke-width="2"/><line x1="${X(2)}" y1="${Y(128)}" x2="${X(2)}" y2="290" stroke="#6fcf8e" stroke-dasharray="4 4"/>`;
+  const v=V(x),m=dV(x);s+=`<line x1="${X(x-.8)}" y1="${Y(v-.8*m)}" x2="${X(x+.8)}" y2="${Y(v+.8*m)}" stroke="#f0b84d" stroke-width="2"/><circle cx="${X(x)}" cy="${Y(v)}" r="5" fill="#58d1c4"/><text x="8" y="14" fill="#93a1b8" font-size="10">volume V against cut size x (0 to 6)</text>`;
+  $("#bsv").innerHTML=s;
+  $("#bout").innerHTML=`<div class="step">Base side = 12 − 2x = ${fmt(12-2*x)} cm, height = x = ${fmt(x)} cm</div><div class="step">V = x(12 − 2x)² = ${fmt(+v.toFixed(3))} cm³ &nbsp; V′ = 12(x − 2)(x − 6) = ${fmt(+m.toFixed(3))}</div><p class="${Math.abs(m)<0.5?"ok":"mute"}">${Math.abs(m)<0.5?"V′ ≈ 0: this is the optimum. The volume cannot be increased by a small change.":m>0?"V′ > 0: the volume is still rising, so cut a larger corner.":"V′ < 0: the volume is falling, so cut a smaller corner."}</p><p class="mute">Exact optimum: V′ = 0 at x = 2 (x = 6 gives V = 0), where V = 2·8² = 128 cm³.</p>`}
+function c4(){
+  $("#v").innerHTML=`<p class="mute">Track B · Calculus · Module 4</p><h1>Applications: motion, peaks, valleys and the best choice</h1>
+  <h2>1 · The big idea</h2><p>The derivative tells you what a quantity is doing: rising, falling, or momentarily flat. That lets you describe motion exactly, find the highest and lowest points of a graph, and answer engineering questions of the form “what is the best possible…?”</p>
+  <h2>2 · Why it exists</h2><p>Fermat noticed that at the top of a hill, the tangent is flat. That one observation turns “find the maximum” from guessing into solving f′(x) = 0. Kepler had asked how to build the wine barrel holding the most wine; calculus finally answers questions like that for any shape.</p>
+  <h2>3 · Visual intuition</h2><p>Walk along a graph from left to right. Uphill: positive slope, f′ > 0. Downhill: f′ < 0. At the crest of a hill or bottom of a valley you pause: f′ = 0. The way the slope itself changes, bending like a bowl or a frown, is described by the second derivative f″.</p>
+  <h2>4 · The toolkit</h2><div class="card"><p>• <b>Motion:</b> position s(t), velocity v = s′, acceleration a = v′ = s″. If v and a have the same sign, the object speeds up; opposite signs, it slows down.<br>• <b>Increasing / decreasing:</b> f′ > 0 / f′ < 0.<br>• <b>Critical points:</b> f′ = 0 (or undefined), the only places an interior extremum can occur.<br>• <b>First derivative test:</b> f′ changes + to − : maximum; − to + : minimum; no change: neither.<br>• <b>Second derivative test:</b> at a critical point, f″ > 0 : minimum; f″ < 0 : maximum; f″ = 0: inconclusive.<br>• <b>Concavity:</b> f″ > 0 concave up (bowl); f″ < 0 concave down (frown). An <b>inflection point</b> is where this changes.<br>• On a closed interval [a, b], also compare the endpoint values: the absolute maximum may be at an end.</p></div>
+  <h2>5 · Derivation: why these tests work</h2><p><b>Fermat’s theorem.</b> Suppose f has a peak at an interior point c. If f′(c) > 0, then stepping slightly right would give a higher value, contradicting the peak. If f′(c) < 0, stepping slightly left would. The only possibility left is f′(c) = 0.<br><b>Second derivative test.</b> f″ is the slope of f′. At a critical point with f″ > 0, f′ is rising through 0, so it goes from negative to positive: the graph falls then rises, a minimum.<br><b>Related rates.</b> If two quantities are linked by a formula, and both change with time, differentiate the formula with respect to t using the chain rule. The links between their speeds appear automatically.</p>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> s(t) = t³ − 6t² + 9t. Then v = 3t² − 12t + 9 = 3(t−1)(t−3) and a = 6t − 12. The object moves right for t < 1, left for 1 < t < 3, and right again after t = 3. At t = 2: v = −3, a = 0: it is moving left at a steady instant. At t = 1 and t = 3 it is momentarily at rest and turning around.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> f(x) = x³ − 3x. f′ = 3x² − 3 = 3(x−1)(x+1), so critical points are x = ±1. f″ = 6x. f″(−1) = −6 < 0: local max with f(−1) = 2. f″(1) = 6 > 0: local min with f(1) = −2. f″ changes sign at 0: an inflection point there.</div>
+  <div class="card"><span class="lbl">Challenging.</span> <b>Optimization.</b> A farmer has 100 m of fence for three sides of a rectangle against a straight river. Let x be the width of each side perpendicular to the river; the side parallel is 100 − 2x. Area A = x(100 − 2x) = 100x − 2x². A′ = 100 − 4x = 0 gives x = 25. A″ = −4 < 0, so it is a maximum: dimensions 25 × 50, area 1250 m². Always check the domain (0 < x < 50) and the ends. <br><b>Related rates.</b> A sphere’s volume V = (4/3)πr³, so dV/dt = 4πr² dr/dt. If dV/dt = 100 cm³/s at r = 5 cm, then dr/dt = 100/(100π) = 1/π ≈ 0.32 cm/s.</div>
+  <h2>7 · Interactive experiment A: the curve analyser</h2><p>Choose a function. Teal means rising, amber means falling. The page finds every critical point in the window and classifies it. Try x³, which is flat at 0 but not a peak or valley. Move x₀ to see f′ and f″ change sign.</p>
+  <div class="card"><div class="row">Function <select id="ap">${AP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div><div class="row"><label style="min-width:110px">x₀</label><input type="range" id="ax" min="-3.5" max="3.5" step="0.1" value="0.5" style="flex:1;min-width:140px"><span id="axv" class="m"></span></div>
+  <svg id="asv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="curve with critical points"></svg><div id="aout"></div></div>
+  <h2>8 · Interactive experiment B: the best box</h2><p>Cut a square of side x from each corner of a 12 cm × 12 cm sheet and fold up the sides. Which x gives the largest volume? Find it by watching the slope V′ reach zero.</p>
+  <div class="card"><div class="row"><label style="min-width:110px">Cut size x</label><input type="range" id="bx" min="0.1" max="5.9" step="0.1" value="1" style="flex:1;min-width:140px"><span id="bxv" class="m"></span></div>
+  <svg id="bsv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="volume against cut size"></svg><div id="bout"></div></div>
+  <h2>9 · In the real world</h2><p>Engineers design cans that use the least metal for a given volume, and companies find the price that maximises profit. Physicists find where a ball peaks, where a pendulum is momentarily at rest, and how fast a shadow races along a wall. Nature optimises too: light takes the quickest path, and soap bubbles minimise surface area.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r19","Why must f′(c) = 0 at an interior maximum? Argue it in words."],["r20","What are the steps of an optimization problem? Why must you check the domain and the end points?"]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>At a peak you cannot go higher by moving either way; if the slope were positive, a step right would climb, and if negative, a step left would. So the slope must be zero. Steps: draw and name variables; write the quantity to optimise; use the constraint to reduce to one variable; differentiate and solve f′ = 0; confirm max or min; and compare with the domain ends, because a maximum can sit at an end where the slope is not zero.</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>Velocity and acceleration are the first and second derivatives of position. The sign of f′ shows rising or falling; zeros of f′ are candidates for peaks and valleys, classified by the first or second derivative test. f″ describes bending. Optimization turns a real problem into one variable, then solves f′ = 0 and checks the ends. Related rates differentiate a formula in time. Next: integration, the reverse of differentiation, which accumulates change into total amounts.</p>
+  <button class="b" onclick="S.done.c4=1;save();this.textContent='Module complete ✓'">Mark module complete</button></div>`;
+  document.querySelectorAll("#ap,#ax").forEach(e=>e.oninput=e.onchange=aplot);$("#bx").oninput=bplot;
+  aplot();bplot();curM=10;qs()}
+
+/* ---------- Calculus 5: integration ---------- */
+Q.push(
+ {id:"q61",m:11,lv:1,t:"mc",q:"What does the definite integral of f from a to b measure?",o:["The slope of f at b","The signed area between the graph of f and the x-axis from a to b","The maximum of f on [a, b]","The average slope of f"],a:1,h:"Think of adding up many thin strips of height f(x) and width dx.",e:"The integral adds up f(x)·dx over all the strips: the net (signed) area between the graph and the x-axis. Area above the axis counts positive, below counts negative."},
+ {id:"q62",m:11,lv:2,t:"num",q:"Evaluate the integral of (3x² + 1) dx from 0 to 2.",a:10,h:"Find an antiderivative F, then compute F(2) − F(0).",e:"F(x) = x³ + x. F(2) − F(0) = (8 + 2) − 0 = 10."},
+ {id:"q63",m:11,lv:1,t:"mc",q:"Why do indefinite integrals include “+ C”?",o:["To make the answer longer","Because the derivative of any constant is 0, so antiderivatives are only defined up to a constant","Because C stands for continuity","Because integrals are always positive"],a:1,h:"Differentiate x², x² + 5 and x² − 100. What do you notice?",e:"All three have derivative 2x. Differentiation erases constants, so reversing it cannot recover them: every antiderivative is F + C for some constant C."},
+ {id:"q64",m:11,lv:2,t:"num",q:"Evaluate the integral of 1/√x from x = 1 to x = 9.",a:4,h:"Write 1/√x as x^(−1/2) and use the power rule in reverse.",e:"∫ x^(−1/2) dx = 2x^(1/2). So the value is 2√9 − 2√1 = 6 − 2 = 4."},
+ {id:"q65",m:11,lv:2,t:"num",q:"Use substitution to evaluate the integral of 2x(x² + 1)³ dx from 0 to 1 (decimal).",a:3.75,h:"Let u = x² + 1, so du = 2x dx. Change the limits too: x = 0 gives u = 1, x = 1 gives u = 2.",e:"The integral becomes ∫ from 1 to 2 of u³ du = [u⁴/4] = (16 − 1)/4 = 15/4 = 3.75."},
+ {id:"q66",m:11,lv:3,t:"num",q:"Use integration by parts to evaluate the integral of x·eˣ dx from 0 to 1.",a:1,h:"Choose u = x (it simplifies when differentiated) and dv = eˣ dx. Then ∫u dv = uv − ∫v du.",e:"u = x, v = eˣ: ∫ x eˣ dx = x eˣ − ∫ eˣ dx = (x − 1)eˣ. From 0 to 1: (0)e − (−1)(1) = 1."},
+ {id:"q67",m:11,lv:3,t:"num",q:"Find the area enclosed between y = x and y = x³ for 0 ≤ x ≤ 1 (decimal).",a:0.25,h:"Which curve is on top between 0 and 1? Integrate (top − bottom).",e:"On [0,1], x ≥ x³. Area = ∫ (x − x³) dx = [x²/2 − x⁴/4] from 0 to 1 = 1/2 − 1/4 = 0.25."},
+ {id:"q68",m:11,lv:3,t:"num",q:"Evaluate the integral of sin x from 0 to 2π. Explain to yourself why the answer is not the area.",a:0,h:"Draw sin x on [0, 2π]. Compare the area above the axis with the area below.",e:"F = −cos x, so F(2π) − F(0) = −1 − (−1) = 0. The hump above the axis (area +2) cancels the hump below (area −2). The integral is signed area; the true area is 4."}
+);
+const IP=[
+ {n:"x²",f:x=>x*x,F:x=>x**3/3,Fn:"x³/3"},
+ {n:"√x",f:x=>x<0?NaN:Math.sqrt(x),F:x=>2/3*x**1.5,Fn:"(2/3)x^(3/2)"},
+ {n:"sin x",f:Math.sin,F:x=>-Math.cos(x),Fn:"−cos x"},
+ {n:"e^(−x)",f:x=>Math.exp(-x),F:x=>-Math.exp(-x),Fn:"−e^(−x)"},
+ {n:"1/(x + 1)",f:x=>1/(x+1),F:x=>Math.log(x+1),Fn:"ln(x + 1)"},
+ {n:"x³ − 6x² + 8x",f:x=>x**3-6*x*x+8*x,F:x=>x**4/4-2*x**3+4*x*x,Fn:"x⁴/4 − 2x³ + 4x²"},
+ {n:"2x + 1",f:x=>2*x+1,F:x=>x*x+x,Fn:"x² + x"}
+];
+const RM={L:"left",R:"right",M:"midpoint",T:"trapezoid"};
+function rplot(){
+  const p=IP[+$("#rp").value],a=+$("#ra").value,b=+$("#rb").value,n=+$("#rn").value,m=$("#rm").value,f=p.f,o=$("#rout");
+  $("#rav").textContent=a.toFixed(1);$("#rbv").textContent=b.toFixed(1);$("#rnv").textContent=n;
+  const ys=[0];for(let i=0;i<=300;i++){const y=f(6*i/300);if(isFinite(y))ys.push(y)}
+  let lo=Math.min(...ys),hi=Math.max(...ys);if(hi-lo<1){hi+=.5;lo-=.5}const pd=(hi-lo)*.1;lo-=pd;hi+=pd;
+  const X=x=>10+280*x/6,Y=y=>290-280*(y-lo)/(hi-lo);let s=`<line x1="0" y1="${Y(0)}" x2="300" y2="${Y(0)}" stroke="#3a4a66"/>`,sum=0,sh="";
+  const dx=(b-a)/n;
+  if(b>a)for(let i=0;i<n;i++){const x0=a+i*dx,x1=x0+dx;let col;
+    if(m=="T"){const y0=f(x0),y1=f(x1);sum+=(y0+y1)/2*dx;col=(y0+y1)>=0?"#58d1c4":"#ef6f6c";sh+=`<polygon points="${X(x0)},${Y(0)} ${X(x0)},${Y(y0)} ${X(x1)},${Y(y1)} ${X(x1)},${Y(0)}" fill="${col}" fill-opacity=".35" stroke="${col}" stroke-width=".6"/>`}
+    else{const h=f(m=="L"?x0:m=="R"?x1:(x0+x1)/2);sum+=h*dx;col=h>=0?"#58d1c4":"#ef6f6c";sh+=`<rect x="${X(x0)}" y="${Math.min(Y(h),Y(0))}" width="${X(x1)-X(x0)}" height="${Math.abs(Y(h)-Y(0))}" fill="${col}" fill-opacity=".35" stroke="${col}" stroke-width=".6"/>`}}
+  let d="",pv=null;for(let i=0;i<=400;i++){const x=6*i/400,y=f(x);if(!isFinite(y)){pv=null;continue}d+=(pv===null?"M":"L")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pv=y}
+  s+=sh+`<path d="${d}" fill="none" stroke="#f0b84d" stroke-width="2"/>`+(b>a?`<line x1="${X(a)}" y1="0" x2="${X(a)}" y2="300" stroke="#93a1b8" stroke-dasharray="3 3"/><line x1="${X(b)}" y1="0" x2="${X(b)}" y2="300" stroke="#93a1b8" stroke-dasharray="3 3"/>`:"")+`<text x="6" y="12" fill="#93a1b8" font-size="10">x from 0 to 6</text>`;
+  $("#rsv").innerHTML=s;
+  if(b<=a){o.innerHTML=`<p class="err">Choose b greater than a (the interval needs positive width).</p>`;return}
+  if(!isFinite(sum)){o.innerHTML=`<p class="err">The function is undefined somewhere on this interval, so the sum cannot be computed.</p>`;return}
+  const ex=p.F(b)-p.F(a),er=sum-ex;
+  o.innerHTML=`<div class="step">Δx = (b − a)/n = (${fmt(b)} − ${fmt(a)})/${n} = ${qv(dx)}</div><div class="step">${RM[m]} sum with ${n} piece${n>1?"s":""} = ${qv(sum)}</div><div class="step">Exact: F(b) − F(a), with F(x) = ${p.Fn}, = ${qv(ex)}</div><p class="${Math.abs(er)<0.01*Math.max(1,Math.abs(ex))?"ok":"mute"}">Error of the estimate: ${qv(er)}. Increase n and watch it shrink; midpoint and trapezoid shrink fastest.</p><p class="mute">Teal pieces count positive, red pieces negative: the integral is signed area.</p>`}
+function ftplot(){
+  const p=IP[+$("#fp").value],x=+$("#fx").value,f=p.f,A=t=>p.F(t)-p.F(0);$("#fxv").textContent=x.toFixed(1);
+  const fy=[0],ay=[0];for(let i=0;i<=300;i++){const t=6*i/300;fy.push(f(t));ay.push(A(t))}
+  const rg=(v)=>{let l=Math.min(...v.filter(isFinite)),h=Math.max(...v.filter(isFinite));if(h-l<1){h+=.5;l-=.5}const q=(h-l)*.1;return[l-q,h+q]};
+  const[fl,fh]=rg(fy),[al,ah]=rg(ay),X=t=>10+280*t/6,Yf=y=>135-120*(y-fl)/(fh-fl),Ya=y=>295-120*(y-al)/(ah-al);
+  let s=`<line x1="0" y1="${Yf(0)}" x2="300" y2="${Yf(0)}" stroke="#3a4a66"/><line x1="0" y1="${Ya(0)}" x2="300" y2="${Ya(0)}" stroke="#3a4a66"/>`;
+  let sh=`M${X(0)} ${Yf(0)}`;for(let i=0;i<=100;i++){const t=x*i/100;sh+=`L${X(t).toFixed(1)} ${Yf(f(t)).toFixed(1)}`}sh+=`L${X(x)} ${Yf(0)}Z`;
+  s+=`<path d="${sh}" fill="#58d1c4" fill-opacity=".3"/>`;
+  let c1="",c2="";for(let i=0;i<=300;i++){const t=6*i/300;c1+=(i?"L":"M")+X(t).toFixed(1)+" "+Yf(f(t)).toFixed(1);c2+=(i?"L":"M")+X(t).toFixed(1)+" "+Ya(A(t)).toFixed(1)}
+  const Ax=A(x),fx=f(x);
+  s+=`<path d="${c1}" fill="none" stroke="#6c8cc0" stroke-width="2"/><path d="${c2}" fill="none" stroke="#f0b84d" stroke-width="2"/><line x1="${X(x)}" y1="0" x2="${X(x)}" y2="300" stroke="#93a1b8" stroke-dasharray="3 3"/><line x1="${X(x-.6)}" y1="${Ya(Ax-.6*fx)}" x2="${X(x+.6)}" y2="${Ya(Ax+.6*fx)}" stroke="#e6ebf3" stroke-width="1.5"/><circle cx="${X(x)}" cy="${Ya(Ax)}" r="5" fill="#f0b84d"/><text x="6" y="12" fill="#93a1b8" font-size="10">top: f(x), shaded area from 0 to x</text><text x="6" y="176" fill="#93a1b8" font-size="10">bottom: A(x) = area so far</text>`;
+  $("#fsv").innerHTML=s;
+  const nd=(A(x+1e-6)-Ax)/1e-6;
+  $("#fout").innerHTML=`<div class="step">A(x) = ∫₀ˣ f = F(x) − F(0) = ${qv(Ax)}</div><div class="step">f(x) = ${qv(fx)} &nbsp; slope of A at x ≈ ${qv(nd)}</div><p class="ok">The slope of the area function equals the height of f: the Fundamental Theorem of Calculus. Where f is negative, A decreases.</p>`}
+function c5(){
+  $("#v").innerHTML=`<p class="mute">Track B · Calculus · Module 5</p><h1>Integration: adding up infinitely many tiny pieces</h1>
+  <h2>1 · The big idea</h2><p>Integration <em>accumulates</em>. If you know how fast something is changing, integration tells you how much it has changed in total. It is also how we find the area under a curve, and it turns out to be differentiation run backwards.</p>
+  <h2>2 · Why it exists</h2><p>Archimedes found the area of a curved shape by filling it with ever more tiny polygons. Centuries later Newton and Leibniz noticed something stunning: finding that area is the <em>reverse</em> of finding a slope. Practical need: a car’s speedometer gives speed at each instant; the odometer reading is the accumulated distance, which is the integral of speed.</p>
+  <h2>3 · Visual intuition</h2><p>Slice the region under a curve into thin vertical strips. Each is nearly a rectangle with height f(x) and width Δx. Add them up. With more, thinner strips the error vanishes, and the sum approaches the exact area. The experiment below shows exactly this.</p>
+  <h2>4 · Definitions and notation</h2><div class="step">∫ from a to b of f(x) dx = lim (n→∞) Σ f(xᵢ*)·Δx, &nbsp; Δx = (b − a)/n</div>
+  <div class="card"><p>• The <b>definite integral</b> gives <em>signed</em> area: above the axis positive, below negative.<br>• An <b>antiderivative</b> of f is a function F with F′ = f. The <b>indefinite integral</b> ∫ f dx = F(x) + C is the whole family.<br>• Linearity: ∫(cf + g) = c∫f + ∫g. Additivity: ∫ₐᵇ + ∫ᵇᶜ = ∫ₐᶜ. Reversing the limits flips the sign.<br>• <b>Basic antiderivatives:</b> ∫xⁿ dx = xⁿ⁺¹/(n+1) + C (n ≠ −1) · ∫1/x dx = ln|x| + C · ∫eˣ dx = eˣ + C · ∫sin x dx = −cos x + C · ∫cos x dx = sin x + C</p></div>
+  <h2>5 · Derivations</h2><div class="card"><p><b>Area from the definition.</b> Right-end rectangles for f(x) = x² on [0, b] with n strips: Σ (ib/n)²(b/n) = (b³/n³)Σi² = (b³/n³)·n(n+1)(2n+1)/6. As n → ∞ this tends to b³/3. Matches the antiderivative x³/3, no coincidence.<br><br><b>Fundamental Theorem, part 1.</b> Let A(x) = ∫ from a to x of f. Then A(x + h) − A(x) is one thin strip of height about f(x) and width h, so [A(x+h) − A(x)]/h ≈ f(x). In the limit, <b>A′(x) = f(x)</b>: the area function is an antiderivative of f.<br><br><b>Part 2.</b> If F is any antiderivative, then A = F + C. Since A(a) = 0, C = −F(a), so <b>∫ from a to b of f = F(b) − F(a)</b>. A tedious limit of sums becomes two substitutions.<br><br><b>Substitution</b> is the chain rule backwards: ∫ f(g(x))g′(x) dx = ∫ f(u) du with u = g(x). <b>Integration by parts</b> is the product rule backwards: from (uv)′ = u′v + uv′ we get ∫ u dv = uv − ∫ v du.</p></div>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> ∫ from 0 to 3 of (2x + 1) dx. F(x) = x² + x. F(3) − F(0) = 12. Check by geometry: a trapezoid with parallel sides 1 and 7, width 3: (1+7)/2 · 3 = 12. ✓</div>
+  <div class="card"><span class="lbl">Intermediate.</span> ∫ 2x cos(x²) dx. Let u = x², du = 2x dx. The integral becomes ∫ cos u du = sin u + C = sin(x²) + C. Definite: ∫ from 0 to 1 of 2x e^(x²) dx = [eᵘ] from u = 0 to u = 1 = e − 1 ≈ 1.718. Remember to change the limits with the variable.</div>
+  <div class="card"><span class="lbl">Challenging.</span> By parts: ∫ x eˣ dx with u = x, dv = eˣ dx gives x eˣ − ∫ eˣ dx = (x − 1)eˣ + C. From 0 to 1: 0 − (−1) = 1. Between curves: area between y = x and y = x² on [0, 1] is ∫ (x − x²) dx = 1/2 − 1/3 = 1/6, always (top − bottom). Check any antiderivative by differentiating it.</div>
+  <h2>7 · Interactive experiment A: Riemann sums</h2><p>Choose a function, an interval [a, b] and a number of strips n. Compare left, right, midpoint and trapezoid rules against the exact value. Try sin x from 0 to 6: why is the answer small even though the picture shows large areas?</p>
+  <div class="card"><div class="row">Function <select id="rp">${IP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select> Method <select id="rm"><option value="L">Left</option><option value="R">Right</option><option value="M">Midpoint</option><option value="T">Trapezoid</option></select></div>
+  ${[["ra","a",0,5.9,0,.1,"rav"],["rb","b",.1,6,3,.1,"rbv"],["rn","strips n",1,100,4,1,"rnv"]].map(q=>`<div class="row"><label style="min-width:90px">${q[1]}</label><input type="range" id="${q[0]}" min="${q[2]}" max="${q[3]}" step="${q[5]}" value="${q[4]}" style="flex:1;min-width:140px"><span id="${q[6]}" class="m"></span></div>`).join("")}
+  <svg id="rsv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="Riemann sum rectangles"></svg><div id="rout"></div></div>
+  <h2>8 · Interactive experiment B: the Fundamental Theorem</h2><p>The top graph is f with the area from 0 to x shaded. The bottom graph is the accumulated area A(x). Drag x and compare: the slope of A (white tangent) always equals the height of f above it.</p>
+  <div class="card"><div class="row">Function <select id="fp">${IP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div><div class="row"><label style="min-width:90px">x</label><input type="range" id="fx" min="0" max="6" step="0.1" value="2" style="flex:1;min-width:140px"><span id="fxv" class="m"></span></div>
+  <svg id="fsv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="function and its accumulated area"></svg><div id="fout"></div></div>
+  <h2>9 · In the real world</h2><p>Total distance from a speed log, total water in a tank from its flow rate, work done by a changing force, electric charge from a current, and the probability of a measurement landing in a range are all integrals. Volumes of curved solids, the centre of mass of a bridge, and the total energy used in a day are too.</p>
+  <h2>10 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r21","Explain in your own words why integration and differentiation undo each other (Fundamental Theorem), using the idea of a thin strip of area."],["r22","Why can the definite integral be zero or negative even when the shaded region clearly has area? How would you find the true area?"]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>Adding one thin strip of width h to the area under f adds about f(x)·h, so the rate at which accumulated area grows per unit x is f(x): the derivative of the area function is f. Therefore the area function is an antiderivative, which is why evaluating F(b) − F(a) gives the area. A definite integral counts regions below the axis negatively, so they can cancel. For true area, split the interval at the zeros of f and add the absolute values of the pieces.</p></details>
+  <h2>11 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>12 · Summary</h2><div class="card"><p>The definite integral is the limit of Riemann sums: signed area, or total accumulated change. The Fundamental Theorem connects it to antiderivatives: ∫ from a to b of f = F(b) − F(a), because the derivative of the area function is f. Substitution reverses the chain rule; integration by parts reverses the product rule. Area between curves is the integral of top minus bottom. Next: the final module, with series, differential equations and the first step into several variables.</p>
+  <button class="b" onclick="S.done.c5=1;save();this.textContent='Module complete ✓'">Mark module complete</button></div>`;
+  document.querySelectorAll("#rp,#rm,#ra,#rb,#rn").forEach(e=>e.oninput=e.onchange=rplot);document.querySelectorAll("#fp,#fx").forEach(e=>e.oninput=e.onchange=ftplot);
+  rplot();ftplot();curM=11;qs()}
+
+/* ---------- Calculus 6: series, DEs, multivariable ---------- */
+Q.push(
+ {id:"q69",m:12,lv:1,t:"mc",q:"Which of these series diverges (its sum grows without bound)?",o:["1/2 + 1/4 + 1/8 + …","1 + 1/4 + 1/9 + 1/16 + …","1 + 1/2 + 1/3 + 1/4 + … (harmonic)","1 − 1/2 + 1/4 − 1/8 + …"],a:2,h:"The terms of the harmonic series shrink, but group them: 1/3 + 1/4 > 1/2, 1/5 + … + 1/8 > 1/2, and so on.",e:"The harmonic series grows past any bound, slowly: each block of terms adds at least 1/2. The first is geometric (sums to 1), the second a p-series with p = 2 (converges), the fourth geometric with r = −1/2 (converges)."},
+ {id:"q70",m:12,lv:2,t:"num",q:"Find the sum 1 + 1/3 + 1/9 + 1/27 + … (decimal).",a:1.5,h:"Geometric series: first term a, ratio r, sum a/(1 − r) when |r| < 1.",e:"a = 1, r = 1/3. Sum = 1/(1 − 1/3) = 3/2 = 1.5."},
+ {id:"q71",m:12,lv:2,t:"num",q:"In the Maclaurin series of cos x, what is the coefficient of x² (decimal)?",a:-0.5,h:"Coefficient = f″(0)/2!. Differentiate cos x twice and substitute 0.",e:"f″(x) = −cos x, so f″(0) = −1. Coefficient = −1/2! = −0.5. (cos x = 1 − x²/2 + x⁴/24 − …)"},
+ {id:"q72",m:12,lv:1,t:"mc",q:"The Taylor polynomial of degree 1 for f at x = a is the same as…",o:["The second derivative","The tangent line at x = a","The area under f","The inverse of f"],a:1,h:"P₁(x) = f(a) + f′(a)(x − a). Where have you seen that?",e:"f(a) + f′(a)(x − a) is exactly the tangent line. Each extra term adds curvature information, so higher-degree polynomials hug the curve better and for longer."},
+ {id:"q73",m:12,lv:2,t:"num",q:"Solve dy/dx = 2x with y(0) = 1. Find y(3).",a:10,h:"Integrate both sides, then use y(0) = 1 to find the constant.",e:"y = x² + C. y(0) = 1 gives C = 1, so y = x² + 1 and y(3) = 10."},
+ {id:"q74",m:12,lv:2,t:"num",q:"f(x, y) = x²y + 3y². Find the partial derivative fᵧ at (1, 2).",a:13,h:"Treat x as a constant and differentiate with respect to y only.",e:"fᵧ = x² + 6y. At (1, 2): 1 + 12 = 13."},
+ {id:"q75",m:12,lv:3,t:"num",q:"Use Euler’s method with h = 0.1 on dy/dx = x + y, y(0) = 1. Find the approximation of y(0.2) (decimal).",a:1.22,h:"Each step: y_new = y_old + h·(x_old + y_old). Do two steps.",e:"Step 1: y(0.1) ≈ 1 + 0.1(0 + 1) = 1.1. Step 2: y(0.2) ≈ 1.1 + 0.1(0.1 + 1.1) = 1.22. (The exact value is 1.2428, so Euler underestimates here.)"},
+ {id:"q76",m:12,lv:3,t:"num",q:"Evaluate the double integral of xy over the rectangle 0 ≤ x ≤ 2, 0 ≤ y ≤ 3.",a:9,h:"The integrand separates: integrate x from 0 to 2, y from 0 to 3, and multiply the results.",e:"∫₀² x dx = 2 and ∫₀³ y dy = 9/2. Product = 2 · 9/2 = 9."}
+);
+const fact=k=>{let r=1;for(let i=2;i<=k;i++)r*=i;return r};
+const pw=k=>k==0?"1":k==1?"x":"x^"+k;
+const TP=[
+ {n:"sin x",f:Math.sin,c:k=>k%2?(((k-1)/2)%2?-1:1)/fact(k):0,tk:k=>pw(k)+"/"+k+"!",w:[-4,4],yr:[-3,3],R:"∞ (works everywhere)",ri:1e9},
+ {n:"cos x",f:Math.cos,c:k=>k%2?0:((k/2)%2?-1:1)/fact(k),tk:k=>pw(k)+"/"+k+"!",w:[-4,4],yr:[-3,3],R:"∞ (works everywhere)",ri:1e9},
+ {n:"eˣ",f:Math.exp,c:k=>1/fact(k),tk:k=>pw(k)+"/"+k+"!",w:[-3,3],yr:[-2,10],R:"∞ (works everywhere)",ri:1e9},
+ {n:"ln(1 + x)",f:x=>x>-1?Math.log(1+x):NaN,c:k=>k==0?0:(k%2?1:-1)/k,tk:k=>pw(k)+"/"+k,w:[-0.95,3],yr:[-3,3],R:"1 (only for −1 < x ≤ 1)",ri:1},
+ {n:"1/(1 − x)",f:x=>x==1?NaN:1/(1-x),c:k=>1,tk:k=>pw(k),w:[-1.5,1.5],yr:[-5,5],R:"1 (only for |x| < 1)",ri:1}
+];
+function tplot(){
+  const p=TP[+$("#tp").value],n=+$("#tn").value,w=p.w,t=Math.min(w[1],Math.max(w[0],+$("#tt").value)),f=p.f;
+  $("#tnv").textContent=n;$("#ttv").textContent=t.toFixed(2);
+  const P=x=>{let s=0;for(let k=0;k<=n;k++)s+=p.c(k)*x**k;return s};
+  const X=x=>10+280*(x-w[0])/(w[1]-w[0]),Y=y=>290-280*(y-p.yr[0])/(p.yr[1]-p.yr[0]);
+  let s=`<line x1="0" y1="${Y(0)}" x2="300" y2="${Y(0)}" stroke="#3a4a66"/>`;if(w[0]<0&&w[1]>0)s+=`<line x1="${X(0)}" y1="0" x2="${X(0)}" y2="300" stroke="#3a4a66"/>`;
+  const path=(g,col,wd,dash)=>{let d="",pv=null;for(let i=0;i<=500;i++){const x=w[0]+(w[1]-w[0])*i/500,y=g(x);if(!isFinite(y)||y<p.yr[0]-1||y>p.yr[1]+1){pv=null;continue}d+=(pv===null||Math.abs(y-pv)>(p.yr[1]-p.yr[0])*.4?"M":"L")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pv=y}return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${wd}" ${dash?'stroke-dasharray="5 4"':""}/>`};
+  s+=path(f,"#f0b84d",2.5,0)+path(P,"#58d1c4",2,0);
+  const ft=f(t),pt=P(t);if(isFinite(ft)&&ft>=p.yr[0]&&ft<=p.yr[1])s+=`<circle cx="${X(t)}" cy="${Y(ft)}" r="4" fill="#f0b84d"/>`;if(isFinite(pt)&&pt>=p.yr[0]&&pt<=p.yr[1])s+=`<circle cx="${X(t)}" cy="${Y(pt)}" r="4" fill="#58d1c4"/>`;
+  $("#tsv").innerHTML=s;
+  const T=[];for(let k=0;k<=n&&T.length<7;k++){const c=p.c(k);if(c!=0)T.push((T.length?(c>0?" + ":" − "):(c<0?"− ":""))+p.tk(k))}
+  const bad=Math.abs(t)>p.ri;
+  $("#tout").innerHTML=`<div class="step">P<sub>${n}</sub>(x) = ${T.join("")}${n>12||T.length>=7?" + …":""}</div><div class="step">At x = ${t.toFixed(2)}: f = ${qv(ft)}, P<sub>${n}</sub> = ${qv(pt)}, error = ${qv(Math.abs(ft-pt))}</div><p class="${bad?"err":"ok"}">Radius of convergence: ${p.R}. ${bad?"This x is outside the radius: adding terms makes the polynomial WORSE, not better.":"Inside the radius: more terms means a better fit."}</p><p class="mute">Amber: the true function. Teal: the Taylor polynomial of degree ${n}.</p>`}
+const EP=[
+ {n:"y′ = y (growth)",F:(x,y)=>y,ex:(x,y)=>y*Math.exp(x)},
+ {n:"y′ = −y (decay)",F:(x,y)=>-y,ex:(x,y)=>y*Math.exp(-x)},
+ {n:"y′ = x − y",F:(x,y)=>x-y,ex:(x,y)=>x-1+(y+1)*Math.exp(-x)},
+ {n:"y′ = y(1 − y) (logistic)",F:(x,y)=>y*(1-y),ex:(x,y)=>y==0?0:1/(1+(1/y-1)*Math.exp(-x))},
+ {n:"y′ = −x/y (circles)",F:(x,y)=>y==0?NaN:-x/y,ex:(x,y)=>Math.abs(y)>=x?Math.sign(y)*Math.sqrt(y*y-x*x):NaN}
+];
+function eplot(){
+  const p=EP[+$("#ep").value],y0=+$("#ey").value,h=+$("#eh").value;$("#eyv").textContent=y0.toFixed(1);$("#ehv").textContent=h.toFixed(2);
+  const X=x=>10+280*x/3,Y=y=>150-140*y/3;let s=`<line x1="0" y1="${Y(0)}" x2="300" y2="${Y(0)}" stroke="#3a4a66"/><line x1="${X(0)}" y1="0" x2="${X(0)}" y2="300" stroke="#3a4a66"/>`;
+  const kx=280/3,ky=140/3;
+  for(let i=0;i<=12;i++)for(let j=-6;j<=6;j++){const x=i*.25,y=j*.5,m=p.F(x,y);if(!isFinite(m))continue;const dx=1,dy=-m*ky/kx,L=Math.hypot(dx,dy),ux=dx/L*7,uy=dy/L*7;s+=`<line x1="${X(x)-ux}" y1="${Y(y)-uy}" x2="${X(x)+ux}" y2="${Y(y)+uy}" stroke="#34527a" stroke-width="1.5"/>`}
+  let d="",pv=null;for(let i=0;i<=300;i++){const x=3*i/300,y=p.ex(x,y0);if(!isFinite(y)||Math.abs(y)>3.2){pv=null;continue}d+=(pv===null?"M":"L")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pv=y}
+  s+=`<path d="${d}" fill="none" stroke="#f0b84d" stroke-width="2.5"/>`;
+  let x=0,y=y0,pts=[[0,y0]];while(x<3-1e-9){const m=p.F(x,y);if(!isFinite(m)||!isFinite(y))break;y+=h*m;x+=h;pts.push([x,y])}
+  const inb=pts.filter(q=>Math.abs(q[1])<=3.2);
+  s+=`<polyline points="${inb.map(q=>X(q[0])+","+Y(q[1])).join(" ")}" fill="none" stroke="#58d1c4" stroke-width="2"/>`+inb.map(q=>`<circle cx="${X(q[0])}" cy="${Y(q[1])}" r="3" fill="#58d1c4"/>`).join("")+`<text x="6" y="12" fill="#93a1b8" font-size="10">x from 0 to 3, y from −3 to 3</text>`;
+  $("#esv").innerHTML=s;
+  const k=Math.round(2/h),xe=k*h,pe=pts[k],ex=p.ex(xe,y0);
+  $("#eout").innerHTML=`<div class="step">Equation: ${p.n}, &nbsp; start: y(0) = ${y0.toFixed(1)}, step h = ${h.toFixed(2)}</div>`+(pe&&isFinite(pe[1])?`<div class="step">Euler at x = ${qv(+xe.toFixed(4))}: y ≈ ${qv(pe[1])} &nbsp; exact: ${qv(ex)} &nbsp; error: ${qv(pe[1]-ex)}</div>`:`<p class="err">The numerical solution hits an undefined slope before x = 2.</p>`)+`<p class="mute">Short blue lines: the slope field, the slope the equation prescribes at each point. Teal: Euler’s method following the arrows in steps. Amber: the exact solution. Halve h and the error roughly halves.</p>`}
+const MP=[
+ {n:"x² + y²",f:(x,y)=>x*x+y*y,fx:"2x",fy:"2y",gx:(x,y)=>2*x,gy:(x,y)=>2*y,I:(a,b)=>a**3*b/3+a*b**3/3},
+ {n:"x·y",f:(x,y)=>x*y,fx:"y",fy:"x",gx:(x,y)=>y,gy:(x,y)=>x,I:(a,b)=>a*a*b*b/4},
+ {n:"x²·y",f:(x,y)=>x*x*y,fx:"2xy",fy:"x²",gx:(x,y)=>2*x*y,gy:(x,y)=>x*x,I:(a,b)=>a**3*b*b/6},
+ {n:"sin x · cos y",f:(x,y)=>Math.sin(x)*Math.cos(y),fx:"cos x cos y",fy:"−sin x sin y",gx:(x,y)=>Math.cos(x)*Math.cos(y),gy:(x,y)=>-Math.sin(x)*Math.sin(y),I:(a,b)=>(1-Math.cos(a))*Math.sin(b)},
+ {n:"e^(x + y)",f:(x,y)=>Math.exp(x+y),fx:"e^(x+y)",fy:"e^(x+y)",gx:(x,y)=>Math.exp(x+y),gy:(x,y)=>Math.exp(x+y),I:(a,b)=>(Math.exp(a)-1)*(Math.exp(b)-1)}
+];
+function mplot(){
+  const p=MP[+$("#mp").value],x0=+$("#mx").value,y0=+$("#my").value,a=+$("#ma").value,b=+$("#mb").value,f=p.f;
+  $("#mxv").textContent=x0.toFixed(1);$("#myv").textContent=y0.toFixed(1);$("#mav").textContent=a.toFixed(1);$("#mbv").textContent=b.toFixed(1);
+  const zs=[];for(let i=0;i<=60;i++){const u=3*i/60;zs.push(f(u,y0),f(x0,u))}
+  let lo=Math.min(...zs),hi=Math.max(...zs);if(hi-lo<1){hi+=.5;lo-=.5}const pd=(hi-lo)*.1;lo-=pd;hi+=pd;
+  const X1=x=>8+130*x/3,X2=y=>158+130*y/3,Y=z=>155-135*(z-lo)/(hi-lo);let s=`<line x1="8" y1="155" x2="138" y2="155" stroke="#3a4a66"/><line x1="158" y1="155" x2="288" y2="155" stroke="#3a4a66"/>`,d1="",d2="";
+  for(let i=0;i<=60;i++){const u=3*i/60;d1+=(i?"L":"M")+X1(u).toFixed(1)+" "+Y(f(u,y0)).toFixed(1);d2+=(i?"L":"M")+X2(u).toFixed(1)+" "+Y(f(x0,u)).toFixed(1)}
+  const z0=f(x0,y0),fx=p.gx(x0,y0),fy=p.gy(x0,y0);
+  s+=`<path d="${d1}" fill="none" stroke="#f0b84d" stroke-width="2"/><path d="${d2}" fill="none" stroke="#6c8cc0" stroke-width="2"/><line x1="${X1(x0-.6)}" y1="${Y(z0-.6*fx)}" x2="${X1(x0+.6)}" y2="${Y(z0+.6*fx)}" stroke="#e6ebf3" stroke-width="1.5"/><line x1="${X2(y0-.6)}" y1="${Y(z0-.6*fy)}" x2="${X2(y0+.6)}" y2="${Y(z0+.6*fy)}" stroke="#e6ebf3" stroke-width="1.5"/><circle cx="${X1(x0)}" cy="${Y(z0)}" r="4" fill="#f0b84d"/><circle cx="${X2(y0)}" cy="${Y(z0)}" r="4" fill="#6c8cc0"/><text x="8" y="12" fill="#93a1b8" font-size="10">z against x (y fixed)</text><text x="158" y="12" fill="#93a1b8" font-size="10">z against y (x fixed)</text>`;
+  $("#msv").innerHTML=s;
+  const N=40;let sum=0;for(let i=0;i<N;i++)for(let j=0;j<N;j++)sum+=f((i+.5)*a/N,(j+.5)*b/N)*(a/N)*(b/N);const ex=p.I(a,b),g=Math.hypot(fx,fy);
+  $("#mout").innerHTML=`<div class="step">f(x, y) = ${p.n} &nbsp; f(${x0.toFixed(1)}, ${y0.toFixed(1)}) = ${qv(z0)}</div><div class="step">f<sub>x</sub> = ${p.fx} = ${qv(fx)} &nbsp; (slope of the amber slice)</div><div class="step">f<sub>y</sub> = ${p.fy} = ${qv(fy)} &nbsp; (slope of the blue slice)</div><p>Gradient ∇f = (${qv(fx)}, ${qv(fy)}) points in the direction of steepest ascent, with slope ${qv(g)}.</p><div class="step">Double integral over 0 ≤ x ≤ ${a.toFixed(1)}, 0 ≤ y ≤ ${b.toFixed(1)}: sum of 1600 small boxes ≈ ${qv(sum)}, exact = ${qv(ex)}</div><p class="mute">The double integral is the volume under the surface above the rectangle.</p>`}
+function c6(){
+  $("#v").innerHTML=`<p class="mute">Track B · Calculus · Module 6</p><h1>Beyond the basics: series, differential equations and many variables</h1>
+  <h2>1 · The big idea</h2><p>Three extensions of everything so far. <b>Series:</b> an infinite sum can have a finite value, and a function can be written as an endless polynomial. <b>Differential equations:</b> instead of a formula, you are given a rule for how something changes, and must find the function. <b>Multivariable calculus:</b> real quantities depend on several inputs, so derivatives and integrals get more directions.</p>
+  <h2>2 · Why it exists</h2><p>Calculators compute sin(0.5) by evaluating a polynomial: the Taylor series. The laws of physics are differential equations: Newton’s F = ma links an unknown position to its second derivative. And temperature, pressure and height depend on three-dimensional position, so a slope has to be taken along each direction.</p>
+  <h2>3 · Visual intuition</h2><p>A Taylor polynomial hugs a curve near a point, and each extra term widens the hug. A differential equation draws a field of tiny arrows (slopes); a solution is a curve that follows the arrows. A surface z = f(x, y) is a landscape; a partial derivative is the slope when you walk along one compass direction.</p>
+  <h2>4 · The toolkit</h2><div class="card"><p>• <b>Series:</b> Σ aₙ = the limit of partial sums. <b>Geometric:</b> a + ar + ar² + … = a/(1 − r) if |r| < 1. <b>p-series</b> Σ 1/nᵖ converges iff p > 1, so the harmonic series (p = 1) diverges. <b>Ratio test:</b> if |aₙ₊₁/aₙ| → L < 1 the series converges.<br>• <b>Power series</b> Σ cₙxⁿ converge for |x| < R, the radius of convergence.<br>• <b>Taylor series</b> about a: f(x) = Σ f⁽ⁿ⁾(a)/n! · (x − a)ⁿ. Maclaurin means a = 0. Key ones: eˣ = Σ xⁿ/n!, sin x = x − x³/3! + x⁵/5! − …, cos x = 1 − x²/2! + x⁴/4! − …, 1/(1−x) = 1 + x + x² + … (|x| < 1).<br>• <b>Differential equation:</b> an equation involving a function and its derivatives. <b>Separable</b>: dy/dx = g(x)h(y) ⇒ ∫ dy/h(y) = ∫ g(x) dx. <b>Euler’s method:</b> yₙ₊₁ = yₙ + h·F(xₙ, yₙ).<br>• <b>Partial derivative</b> fₓ: differentiate in x, treating y as constant. <b>Gradient</b> ∇f = (fₓ, fᵧ). <b>Double integral</b> ∬ f dA: the volume under the surface, found as an iterated integral.</p></div>
+  <h2>5 · Derivations</h2><div class="card"><p><b>Geometric series.</b> S = 1 + r + … + rᴺ⁻¹. Then rS = r + … + rᴺ, so S − rS = 1 − rᴺ, giving S = (1 − rᴺ)/(1 − r). If |r| < 1, rᴺ → 0, so the sum tends to 1/(1 − r).<br><b>Taylor coefficients.</b> Suppose f(x) = c₀ + c₁x + c₂x² + …. Differentiating k times and setting x = 0 kills every term except one: f⁽ᵏ⁾(0) = k!·cₖ. So cₖ = f⁽ᵏ⁾(0)/k!. For eˣ every derivative at 0 is 1, giving 1/k!. For sin x the derivatives at 0 cycle 0, 1, 0, −1, giving x − x³/3! + …<br><b>Separable DE.</b> dy/dx = ky ⇒ dy/y = k dx ⇒ ln|y| = kx + C ⇒ y = Ce^(kx): exponential growth or decay.<br><b>Euler.</b> Near a point the solution is almost its tangent line, so step along the slope the equation gives for a short distance h, then repeat.</p></div>
+  <h2>6 · Worked examples</h2>
+  <div class="card"><span class="lbl">Beginner.</span> 1/2 + 1/4 + 1/8 + … has a = 1/2, r = 1/2, sum = (1/2)/(1/2) = 1. Partial sums 0.5, 0.75, 0.875, … creep up on 1. Also 0.999… = 0.9 + 0.09 + … = 0.9/(1 − 0.1) = 1 exactly.</div>
+  <div class="card"><span class="lbl">Intermediate.</span> sin(0.5) ≈ 0.5 − 0.5³/6 = 0.5 − 0.02083 = 0.47917; the true value is 0.47943, error 0.0003 from just two terms. For a population with dy/dt = 0.3y and y(0) = 100: y = 100e^(0.3t), doubling when e^(0.3t) = 2, i.e. t = ln 2/0.3 ≈ 2.31.</div>
+  <div class="card"><span class="lbl">Challenging.</span> f(x, y) = x²y + 3y². fₓ = 2xy and fᵧ = x² + 6y. At (1, 2): ∇f = (4, 13), so the surface climbs fastest mostly in the y direction. Double integral of x²y over [0,1]×[0,2] = (∫₀¹x²dx)(∫₀²y dy) = (1/3)(2) = 2/3. Euler on y′ = x + y, y(0) = 1, h = 0.1: y₁ = 1 + 0.1(0 + 1) = 1.1. The exact value at 0.1 is 1.1103, so each step carries a small error that accumulates.</div>
+  <h2>7 · Interactive experiment A: Taylor polynomials</h2><p>Raise the degree and watch the teal polynomial wrap round the amber function. Then choose ln(1 + x) or 1/(1 − x) and push x beyond 1: the polynomials explode instead of converging. That is the radius of convergence.</p>
+  <div class="card"><div class="row">Function <select id="tp">${TP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div>
+  <div class="row"><label style="min-width:90px">Degree n</label><input type="range" id="tn" min="0" max="15" step="1" value="1" style="flex:1;min-width:140px"><span id="tnv" class="m"></span></div><div class="row"><label style="min-width:90px">Test x</label><input type="range" id="tt" min="-3" max="3" step="0.05" value="1" style="flex:1;min-width:140px"><span id="ttv" class="m"></span></div>
+  <svg id="tsv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="function and Taylor polynomial"></svg><div id="tout"></div></div>
+  <h2>8 · Interactive experiment B: slope fields and Euler’s method</h2><p>Each short blue line shows the slope the equation demands at that point. Pick a starting height. The teal path follows the arrows in steps of size h; the amber curve is the exact solution. Which equation has solutions that all level off at the same height?</p>
+  <div class="card"><div class="row">Equation <select id="ep">${EP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div>
+  <div class="row"><label style="min-width:90px">y(0)</label><input type="range" id="ey" min="-2" max="2" step="0.1" value="1" style="flex:1;min-width:140px"><span id="eyv" class="m"></span></div><div class="row"><label style="min-width:90px">Step h</label><input type="range" id="eh" min="0.05" max="1" step="0.05" value="0.5" style="flex:1;min-width:140px"><span id="ehv" class="m"></span></div>
+  <svg id="esv" viewBox="0 0 300 300" width="100%" style="max-width:360px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="slope field and Euler path"></svg><div id="eout"></div></div>
+  <h2>9 · Interactive experiment C: partial derivatives and double integrals</h2><p>Slice the surface along x and along y at your chosen point. The slope of each slice is a partial derivative. Then choose a rectangle and compare the sum of 1600 small boxes with the exact double integral.</p>
+  <div class="card"><div class="row">Surface z = <select id="mp">${MP.map((q,i)=>`<option value="${i}">${q.n}</option>`).join("")}</select></div>
+  ${[["mx","x₀",0,3,1,"mxv"],["my","y₀",0,3,1,"myv"],["ma","a (x to)",.5,3,2,"mav"],["mb","b (y to)",.5,3,1,"mbv"]].map(q=>`<div class="row"><label style="min-width:90px">${q[1]}</label><input type="range" id="${q[0]}" min="${q[2]}" max="${q[3]}" step="0.1" value="${q[4]}" style="flex:1;min-width:140px"><span id="${q[5]}" class="m"></span></div>`).join("")}
+  <svg id="msv" viewBox="0 0 300 170" width="100%" style="max-width:420px;background:#0b111c;border-radius:8px;margin-top:8px" role="img" aria-label="slices of a surface"></svg><div id="mout"></div></div>
+  <h2>10 · In the real world</h2><p>Calculators and computers evaluate sin, cos and eˣ with truncated series. Radioactive decay, compound interest, cooling coffee, epidemics (logistic growth) and circuits are differential equations. Weather maps are fields of partial derivatives, with the gradient showing where air pressure changes fastest. Machine learning trains models by following gradients downhill, and engineers use double and triple integrals for mass, centre of gravity and total charge.</p>
+  <h2>11 · Active recall</h2><p class="mute">Write before you check.</p>
+  ${[["r23","How can infinitely many positive terms add to a finite number? Use 1/2 + 1/4 + 1/8 + … and also explain why 1 + 1/2 + 1/3 + … behaves differently."],["r24","What is the difference between solving an ordinary equation like x² = 4 and solving a differential equation like y′ = y? What is the answer to the second one?"]].map(r=>`<div class="card"><p>${r[1]}</p><textarea oninput="S.rec['${r[0]}']=this.value;save()">${S.rec[r[0]]||""}</textarea></div>`).join("")}
+  <details class="card"><summary>Check against a model answer</summary><p>The terms 1/2, 1/4, 1/8 shrink fast enough that the partial sums approach 1 (each term halves the remaining gap). The harmonic terms shrink, but too slowly: blocks of them each add at least 1/2, so the sum is unbounded. x² = 4 asks for numbers (2 and −2); y′ = y asks for a whole function whose slope equals its height, so y = Ceˣ, a family of curves fixed by an initial condition.</p></details>
+  <h2>12 · Practice</h2><p class="mute">Attempt first. Hints on request, explanations after you submit.</p><div id="qs"></div>
+  <h2>13 · Summary</h2><div class="card"><p>A series is the limit of its partial sums; geometric series with |r| < 1 sum to a/(1 − r). Taylor series build a function from its derivatives at one point, valid inside a radius of convergence. A differential equation states how a quantity changes; separable ones are solved by integration, and Euler’s method follows the slope field numerically. Partial derivatives are slopes along one axis, the gradient points uphill, and double integrals measure volume. You now have the full arc from functions and limits through derivatives and integrals to these frontiers. Everything beyond is the same ideas, extended.</p>
+  <button class="b" onclick="S.done.c6=1;save();this.textContent='Module complete ✓'">Mark module complete</button></div>`;
+  document.querySelectorAll("#tp,#tn,#tt").forEach(e=>e.oninput=e.onchange=tplot);document.querySelectorAll("#ep,#ey,#eh").forEach(e=>e.oninput=e.onchange=eplot);document.querySelectorAll("#mp,#mx,#my,#ma,#mb").forEach(e=>e.oninput=e.onchange=mplot);
+  tplot();eplot();mplot();curM=12;qs()}
+
+/* ---------- Assessments ---------- */
+const TABK=["l1","l2","l3","l4","l5","l6","c1","c2","c3","c4","c5","c6"];
+const MN=["What is a matrix?","Matrix operations","Determinants","Inverse matrices","Systems of equations","Transformations and eigenvalues","Functions","Limits","Differentiation","Applications of derivatives","Integration","Series, DEs and multivariable"];
+const LV=["","Level 1 · conceptual","Level 2 · computation","Level 3 · reasoning and application"];
+function asm(){
+  S.asm=S.asm||{};
+  $("#v").innerHTML=`<h1>Module assessments</h1><p class="mute">Each assessment uses that module’s question bank in exam mode: answer everything first, with no hints. Explanations appear only after you submit. Misses are sent to Review and your best score is kept. Questions run through three levels: conceptual, computation, and reasoning or application.</p>
+  <div class="grid">${MN.map((n,i)=>{const r=S.asm[i+1];return `<div class="card"><span class="tag">${i<6?"Matrices":"Calculus"} ${i%6+1}</span><p><b>${n}</b></p><p class="mute">${r?`Best ${r.best}/${r.total}`:"Not attempted"}</p><button class="b" onclick="asmGo(${i+1})">${r?"Retake":"Start"}</button></div>`}).join("")}</div><div id="ar"></div>`}
+function asmGo(m){
+  const qs2=Q.filter(q=>(q.m||1)==m);
+  $("#ar").innerHTML=`<h2>${MN[m-1]}</h2>`+qs2.map((q,i)=>`<div class="card"><span class="tag">${LV[q.lv]}</span><p>${i+1}. ${q.q}</p>${q.t=="mc"?q.o.map((o,k)=>`<label class="o"><input type="radio" name="as_${q.id}" value="${k}"> ${o}</label>`).join(""):`<input class="n" type="number" step="any" id="as_${q.id}" placeholder="your answer">`}</div>`).join("")+`<button class="b" onclick="asmSub(${m})">Submit assessment</button><div id="ares"></div>`;
+  try{$("#ar").scrollIntoView()}catch(e){}}
+function asmSub(m){
+  const qs2=Q.filter(q=>(q.m||1)==m),res=[];let blank=0;
+  qs2.forEach(q=>{let v=null;if(q.t=="mc"){const c=document.querySelector(`input[name="as_${q.id}"]:checked`);if(c)v=+c.value}else{const t=$("#as_"+q.id).value.trim();if(t!==""&&isFinite(+t))v=+t}
+    if(v===null)blank++;res.push({q,v,ok:v===q.a})});
+  if(blank&&!confirm(`${blank} question(s) unanswered. Submit anyway? Blanks count as wrong.`))return;
+  const sc=res.filter(r=>r.ok).length,tot=res.length;S.asm=S.asm||{};const prev=S.asm[m];S.asm[m]={best:Math.max(prev?prev.best:0,sc),total:tot,last:sc};
+  res.forEach(r=>{if(!r.ok&&!S.mist.includes(r.q.id))S.mist.push(r.q.id)});save();
+  const lv=[1,2,3].map(l=>{const a=res.filter(r=>r.q.lv==l);return a.length?`${LV[l]}: ${a.filter(r=>r.ok).length}/${a.length}`:""}).filter(Boolean),pc=Math.round(100*sc/tot);
+  $("#ares").innerHTML=`<div class="card"><h3>Score ${sc}/${tot} (${pc}%)</h3><p>${lv.join(" · ")}</p><p class="${pc>=80?"ok":pc>=60?"mute":"err"}">${pc>=80?"Strong. You can move on, then revisit this module in a few days.":pc>=60?"Solid base. Study the explanations below, then retake.":"Revisit the lesson, then try again."}</p><button class="g" onclick="go(TABK[${m-1}])">Open the lesson</button></div>`+res.map(r=>`<div class="card"><span class="tag">${LV[r.q.lv]}</span><p>${r.q.q}</p><p class="${r.ok?"ok":"err"}">${r.ok?"Correct.":(r.v===null?"Not answered.":"Your answer: "+(r.q.t=="mc"?r.q.o[r.v]:r.v)+". Not quite.")}</p><p>${r.q.e}</p></div>`).join("");
+  try{$("#ares").scrollIntoView()}catch(e){}}
+
+/* ---------- Library ---------- */
+const FORM=[
+["Matrices","Order and entries","A is m×n: m rows, n columns, m·n entries; a_ij is row i, column j"],
+["Matrices","Sum and scalar multiple","(A ± B)_ij = a_ij ± b_ij (same order only); (kA)_ij = k·a_ij"],
+["Matrices","Product","(AB)_ij = Σ a_ik b_kj; (m×n)(n×p) gives m×p; AB ≠ BA in general"],
+["Matrices","2×2 determinant","det [[a,b],[c,d]] = ad − bc"],
+["Matrices","3×3 determinant","Expand along row 1: a₁₁M₁₁ − a₁₂M₁₂ + a₁₃M₁₃ (signs + − +)"],
+["Matrices","Determinant properties","det(AB) = det A · det B; det(kA) = kⁿ det A; swapping rows flips the sign; equal rows give 0"],
+["Matrices","2×2 inverse","A⁻¹ = (1/(ad − bc))·[[d, −b],[−c, a]]"],
+["Matrices","Inverse by adjugate","A⁻¹ = adj A / det A, where adj A is the transpose of the cofactor matrix"],
+["Matrices","Inverse rules","(AB)⁻¹ = B⁻¹A⁻¹; det A⁻¹ = 1/det A; an inverse exists only if det A ≠ 0"],
+["Matrices","Matrix equation","AX = B ⇒ X = A⁻¹B (multiply on the left) when det A ≠ 0"],
+["Matrices","Row operations","Swap rows; multiply a row by k ≠ 0; add a multiple of one row to another"],
+["Matrices","Linear transformation","Columns of A are the images of (1,0) and (0,1); |det A| is the area scale factor"],
+["Matrices","Eigenvalues","Av = λv; det(A − λI) = 0; for 2×2: λ² − (trace)λ + det = 0; sum of eigenvalues = trace, product = det"],
+["Calculus","Transformations","y = a·g(b(x − c)) + d: a vertical scale, b horizontal scale, c shift right, d shift up"],
+["Calculus","Composition and logs","(f∘g)(x) = f(g(x)); log(MN) = log M + log N; log(M/N) = log M − log N; log Mᵖ = p log M"],
+["Calculus","Limits","lim (f ± g) = L ± M; lim fg = LM; lim f/g = L/M (M ≠ 0); lim (x→0) sin x / x = 1"],
+["Calculus","Continuity at a","f(a) defined, lim (x→a) f(x) exists, and the two are equal"],
+["Calculus","Derivative definition","f′(x) = lim (h→0) [f(x + h) − f(x)]/h"],
+["Calculus","Differentiation rules","(xⁿ)′ = nxⁿ⁻¹; (fg)′ = f′g + fg′; (f/g)′ = (f′g − fg′)/g²; (f(g(x)))′ = f′(g(x))·g′(x)"],
+["Calculus","Standard derivatives","(sin x)′ = cos x; (cos x)′ = −sin x; (tan x)′ = sec²x; (eˣ)′ = eˣ; (aˣ)′ = aˣ ln a; (ln x)′ = 1/x"],
+["Calculus","Motion","v = s′, a = v′ = s″; speeding up when v and a have the same sign"],
+["Calculus","Max and min tests","Critical points: f′ = 0; f″ > 0 minimum, f″ < 0 maximum; concavity changes at an inflection point"],
+["Calculus","Standard integrals","∫xⁿ dx = xⁿ⁺¹/(n+1) + C (n ≠ −1); ∫1/x dx = ln|x| + C; ∫eˣ = eˣ + C; ∫sin x = −cos x + C; ∫cos x = sin x + C"],
+["Calculus","Fundamental Theorem","∫ₐᵇ f dx = F(b) − F(a) where F′ = f; d/dx ∫ₐˣ f(t) dt = f(x)"],
+["Calculus","Substitution and parts","∫f(g(x))g′(x) dx = ∫f(u) du; ∫u dv = uv − ∫v du"],
+["Calculus","Riemann sum and area","∫ₐᵇ f ≈ Σ f(xᵢ*)Δx with Δx = (b − a)/n; area between curves = ∫(top − bottom)"],
+["Calculus","Geometric series","a + ar + ar² + … = a/(1 − r) when |r| < 1"],
+["Calculus","Taylor series","f(x) = Σ f⁽ⁿ⁾(a)(x − a)ⁿ/n!; eˣ = Σ xⁿ/n!; sin x = x − x³/3! + x⁵/5! − …; cos x = 1 − x²/2! + x⁴/4! − …"],
+["Calculus","Differential equations","y′ = ky ⇒ y = Ce^(kx); separable: ∫dy/h(y) = ∫g(x)dx; Euler: yₙ₊₁ = yₙ + h·F(xₙ, yₙ)"],
+["Calculus","Multivariable","fₓ, fᵧ: differentiate in one variable, other held constant; ∇f = (fₓ, fᵧ) points uphill; ∬f dA = ∫(∫f dy)dx"]
+];
+const GLOS=[
+["Matrix","A rectangular table of numbers treated as a single object."],["Order","The size of a matrix, rows × columns."],["Entry","One number in a matrix, a_ij in row i, column j."],["Square matrix","A matrix with equal numbers of rows and columns."],["Identity matrix","Square matrix with 1s on the diagonal and 0s elsewhere; IA = AI = A."],["Diagonal / triangular","Non-zero entries only on the diagonal / only on or above (below) it."],["Determinant","A number from a square matrix: the signed area or volume scale factor."],["Singular","A matrix with determinant 0: it flattens space and has no inverse."],["Minor / cofactor","The determinant left after deleting a row and column / the minor with its checkerboard sign."],["Adjugate","The transpose of the cofactor matrix; A⁻¹ = adj A / det A."],["Inverse","The matrix that undoes A: AA⁻¹ = I."],["Augmented matrix","The coefficient matrix with the right-hand side attached as an extra column."],["Row operation","Swap rows, scale a row, or add a multiple of one row to another; never changes the solutions."],["Pivot","The leading non-zero entry of a row after elimination."],["Consistent / inconsistent","A system with at least one solution / with none (a row reading 0 = c, c ≠ 0)."],["Linear transformation","A map that preserves addition and scaling; every one is a matrix."],["Linear independence","No vector in the set is a combination of the others."],["Span / basis","All combinations of some vectors / an independent set that spans the whole space."],["Eigenvector / eigenvalue","A direction Av = λv that A only stretches, and the stretch factor λ."],
+["Function","A rule giving exactly one output for each input."],["Domain / range","The allowed inputs / the outputs that occur."],["Composition","Applying one function after another: (f∘g)(x) = f(g(x))."],["Limit","The value f(x) approaches as x approaches a, ignoring x = a itself."],["One-sided limit","A limit approached from the left or right only."],["Continuity","No gap, jump or hole: f(a) exists and equals the limit."],["Asymptote","A line a graph approaches without reaching: vertical (blow-up) or horizontal (limit at infinity)."],["Indeterminate form","An expression like 0/0 or ∞/∞ that needs more work to find a limit."],["Secant / tangent","A line through two points of a curve / the limit of secants, touching at one point."],["Derivative","Instantaneous rate of change; the slope of the tangent line."],["Critical point","A point where f′ = 0 or is undefined, a candidate for a maximum or minimum."],["Concavity","Whether a graph bends like a bowl (f″ > 0) or a frown (f″ < 0)."],["Inflection point","Where concavity changes."],["Related rates","Finding one rate from another by differentiating a formula in time."],["Antiderivative","A function F with F′ = f; determined up to + C."],["Definite integral","The signed area under a graph, or accumulated change."],["Riemann sum","A sum of rectangle areas approximating an integral."],["Fundamental Theorem","Differentiation and integration are inverse processes: ∫ f = F(b) − F(a)."],["Series","An infinite sum, defined as the limit of its partial sums."],["Radius of convergence","How far from the centre a power series converges."],["Taylor series","A function written as a power series built from its derivatives at one point."],["Differential equation","An equation relating a function to its derivatives."],["Slope field","A grid of short lines showing the slope a differential equation prescribes everywhere."],["Partial derivative","The derivative in one variable with the others held constant."],["Gradient","The vector of partial derivatives; it points in the direction of steepest ascent."]
+];
+function lib(){
+  $("#v").innerHTML=`<h1>Formula library and glossary</h1><p class="mute">Every formula here comes with a derivation in its lesson. Use this for quick lookup, not memorising.</p><div class="row"><input type="text" id="lq" placeholder="Search…" aria-label="search" style="flex:1;min-width:160px"><select id="lc"><option>All</option><option>Matrices</option><option>Calculus</option><option>Glossary</option></select></div><div id="lr"></div>`;
+  $("#lq").oninput=$("#lc").onchange=lrender;lrender()}
+function lrender(){
+  const q=$("#lq").value.toLowerCase(),c=$("#lc").value,ok=a=>a.join(" ").toLowerCase().includes(q);
+  const F=FORM.filter(f=>(c=="All"||c==f[0])&&ok(f)),G=GLOS.filter(g=>(c=="All"||c=="Glossary")&&ok(g));
+  $("#lr").innerHTML=(F.length?`<h2>Formulas</h2>`+F.map(f=>`<div class="card"><span class="tag">${f[0]}</span> <b>${f[1]}</b><div class="step">${f[2]}</div></div>`).join(""):"")+(G.length?`<h2>Glossary</h2>`+G.map(g=>`<div class="card"><b class="m">${g[0]}</b><br>${g[1]}</div>`).join(""):"")+(F.length||G.length?"":`<p class="mute">Nothing matches “${q}”.</p>`)}
+
+/* ---------- Review ---------- */
+function rev(){
+  const m=S.mist.map(id=>Q.find(q=>q.id==id)).filter(Boolean);
+  const n=Object.keys(S.ans).length,c=Object.values(S.ans).filter(a=>a.ok).length;
+  $("#v").innerHTML=`<h1>Review</h1><p class="mute">Answered ${n} of ${Q.length} · ${c} correct.</p>`+(m.length?m.map(q=>`<div class="card"><span class="tag">Level ${q.lv}</span><p>${q.q}</p><p class="mute">Hint: ${q.h}</p><p>${q.e}</p><button class="g" onclick="go(TABK[${q.m||1}-1])">Open the lesson</button> <button class="g" onclick="S.mist=S.mist.filter(x=>x!='${q.id}');save();rev()">I understand this now</button></div>`).join(""):`<div class="card"><p>No open mistakes. Try the matrix lab to stress-test your understanding.</p></div>`)}
+function notes(){$("#v").innerHTML=`<h1>Notes</h1><p class="mute">Saved on this device as you type.</p><textarea id="nt" style="min-height:300px">${S.notes}</textarea>`;$("#nt").oninput=e=>{S.notes=e.target.value;save()}}
+
+/* ---------- Matrix Lab ---------- */
+let A,B;
+function lab(){
+  $("#v").innerHTML=`<h1>Matrix lab</h1><p class="mute">Edit sizes and entries, then run an operation. Invalid input is explained, not ignored.</p>
+  <div class="grid"><div class="card"><h3>Matrix A</h3><div class="row"><select id="ar">${[1,2,3,4].map(n=>`<option ${n==2?"selected":""}>${n}</option>`)}</select>×<select id="ac">${[1,2,3,4].map(n=>`<option ${n==2?"selected":""}>${n}</option>`)}</select></div><div id="A" style="overflow-x:auto"></div></div>
+  <div class="card"><h3>Matrix B</h3><div class="row"><select id="br">${[1,2,3,4].map(n=>`<option ${n==2?"selected":""}>${n}</option>`)}</select>×<select id="bc">${[1,2,3,4].map(n=>`<option ${n==2?"selected":""}>${n}</option>`)}</select></div><div id="B" style="overflow-x:auto"></div></div></div>
+  <div class="row"><button class="b" onclick="op('add')">A + B</button><button class="b" onclick="op('sub')">A − B</button><button class="b" onclick="op('mul')">A × B</button><button class="g" onclick="op('detA')">det A</button><button class="g" onclick="op('detB')">det B</button><button class="g" onclick="op('invA')">Inverse of A</button><button class="g" onclick="op('gA')">Solve [A | B] by elimination</button><button class="g" onclick="op('trA')">Transform grid of A</button></div>
+  <div class="row" style="margin-top:10px">k = <input class="n" type="number" step="any" id="k" value="2" style="width:80px"> <button class="g" onclick="op('sA')">k·A</button><button class="g" onclick="op('sB')">k·B</button></div>
+  <div class="card" id="out"><span class="mute">Results and step-by-step working appear here.</span></div>`;
+  A=Ed($("#A"),2,2,[[1,2],[3,4]]);B=Ed($("#B"),2,2,[[0,1],[1,0]]);
+  $("#ar").onchange=$("#ac").onchange=()=>A.resize(+$("#ar").value,+$("#ac").value);
+  $("#br").onchange=$("#bc").onchange=()=>B.resize(+$("#br").value,+$("#bc").value)}
+function op(t){const out=$("#out"),a=A.get(),b=B.get(),E=m=>out.innerHTML=`<span class="err">${m}</span>`;
+  if(a.err||b.err)return E(a.err?"Matrix A: "+a.err:"Matrix B: "+b.err);
+  const X=a.m,Y=b.m;
+  if(t=="add"||t=="sub"){const s=t=="add"?1:-1;
+    if(X.length!=Y.length||X[0].length!=Y[0].length)return E(`Cannot ${t=="add"?"add":"subtract"}: A is ${X.length}×${X[0].length} but B is ${Y.length}×${Y[0].length}. Addition works entry by entry, so both orders must match.`);
+    out.innerHTML=show(X.map((r,i)=>r.map((x,j)=>x+s*Y[i][j])))+`<p class="mute">Each entry: a<sub>ij</sub> ${s>0?"+":"−"} b<sub>ij</sub>.</p>`}
+  if(t=="sA"||t=="sB"){const k=Number($("#k").value);if(!isFinite(k)||$("#k").value==="")return E("k must be a number.");const M=t=="sA"?X:Y;out.innerHTML=show(M.map(r=>r.map(x=>k*x)))+`<p class="mute">Every entry is multiplied by k = ${fmt(k)}.</p>`}
+  if(t=="detA"||t=="detB"){const M=t=="detA"?X:Y,n=M.length;
+    if(n!=M[0].length)return E(`Determinant needs a square matrix, but this one is ${n}×${M[0].length}.`);
+    if(n>3)return E("This lab computes determinants up to 3×3 for now.");
+    const d=det(M);out.innerHTML=`<div class="step">det = ${fmt(d)}</div>`+(n==2?`<div class="step">ad − bc = (${fmt(M[0][0])})(${fmt(M[1][1])}) − (${fmt(M[0][1])})(${fmt(M[1][0])})</div>`:"")+`<p class="${d==0?"err":"ok"}">${d==0?"Determinant is 0: this matrix is singular (no inverse).":"Determinant is non-zero: this matrix is non-singular."}</p>`}
+  if(t=="invA"){const n=X.length;if(n!=X[0].length)return E(`Only square matrices can have an inverse; A is ${n}×${X[0].length}.`);if(n>4)return E("The lab handles inverses up to 4×4.");
+    const r=inv(X);if(r.d==0){out.innerHTML=`<div class="step">det A = 0</div><p class="err">A is singular, so it has no inverse. It flattens space, losing information that no matrix could restore. Look for a row or column that is a combination of the others.</p>`;return}
+    const P=mm(X,r.inv),ok=P.every((row,i)=>row.every((x,j)=>Math.abs(x-(i==j?1:0))<1e-9));
+    out.innerHTML=`<div class="step">det A = ${fmt(r.d)} ≠ 0</div><div class="step">Cofactor matrix</div>${show(r.cof)}<div class="step">Adjugate (transpose)</div>${show(r.adj)}<div class="step">A⁻¹ = adjugate / ${fmt(r.d)}</div>${show(r.inv)}<div class="step">Check A · A⁻¹</div>${show(P)}<p class="${ok?"ok":"err"}">${ok?"= I ✓":"Not the identity."}</p>`}
+  if(t=="gA"){if(Y.length!=X.length||Y[0].length!=1)return E(`For elimination, B must be a single column with the same number of rows as A (A has ${X.length} rows; B is ${Y.length}×${Y[0].length}). Set B to ${X.length}×1.`);
+    const r=gauss(X.map((row,i)=>[...row,Y[i][0]])),V=["x","y","z","w"];
+    let v;if(r.bad>=0)v=`<p class="err">Row ${r.bad+1} reads 0 = ${fmt(r.M[r.bad][r.w])}: no solution (inconsistent).</p>`;else if(r.piv.length<r.w)v=`<p class="ok">${r.piv.length} pivot(s) for ${r.w} unknowns: infinitely many solutions (${r.w-r.piv.length} free variable).</p>`;else v=`<p class="ok">Unique solution: ${r.M.map((row,i)=>`${V[i]||"x"+(i+1)} = ${fmt(row[r.w])}`).join(", ")}</p>`;
+    out.innerHTML=(r.st.length?r.st.map(s=>`<div class="step">${s[0]}</div>${show(s[1])}`).join(""):`<p class="mute">Already reduced.</p>`)+v+`<p class="mute">Last column is the right-hand side.</p>`}
+  if(t=="trA"){if(X.length!=2||X[0].length!=2)return E("The transformation grid needs a 2×2 matrix A.");
+    const a=X[0][0],b=X[0][1],c=X[1][0],d=X[1][1],dt=a*d-b*c,T=(x,y)=>[a*x+b*y,c*x+d*y],ext=Math.max(3,...[[3,3],[-3,3],[3,-3],[-3,-3]].map(p=>Math.max(...T(...p).map(Math.abs)))),k=140/ext,PX=x=>150+x*k,PY=y=>150-y*k,col=Math.abs(dt)<1e-9?"#ef6f6c":dt>0?"#58d1c4":"#f0b84d";let s="";
+    for(let i=-3;i<=3;i++){const p=T(i,-3),q=T(i,3),r=T(-3,i),u=T(3,i);s+=`<line x1="${PX(i)}" y1="${PY(-3)}" x2="${PX(i)}" y2="${PY(3)}" stroke="#26344d"/><line x1="${PX(-3)}" y1="${PY(i)}" x2="${PX(3)}" y2="${PY(i)}" stroke="#26344d"/><line x1="${PX(p[0])}" y1="${PY(p[1])}" x2="${PX(q[0])}" y2="${PY(q[1])}" stroke="#3b6aa0"/><line x1="${PX(r[0])}" y1="${PY(r[1])}" x2="${PX(u[0])}" y2="${PY(u[1])}" stroke="#3b6aa0"/>`}
+    s+=`<polygon points="${PX(0)},${PY(0)} ${PX(a)},${PY(c)} ${PX(a+b)},${PY(c+d)} ${PX(b)},${PY(d)}" fill="${col}" fill-opacity=".3" stroke="${col}" stroke-width="2"/>`;
+    out.innerHTML=`<svg viewBox="0 0 300 300" width="100%" style="max-width:340px;background:#0b111c;border-radius:8px" role="img" aria-label="transformed grid">${s}</svg><div class="step">det A = ${fmt(dt)}</div><p class="${Math.abs(dt)<1e-9?"err":"mute"}">${Math.abs(dt)<1e-9?"Singular: the whole plane is flattened onto a line or point.":dt<0?"Non-singular; areas scale by "+fmt(-dt)+" and orientation is flipped.":"Non-singular; areas scale by "+fmt(dt)+"."}</p>`}
+  if(t=="mul"){const n=X[0].length;
+    if(n!=Y.length)return E(`Cannot multiply: A has ${n} columns but B has ${Y.length} rows. Each row of A is paired with a column of B, so these two numbers must match.`);
+    const R=X.map((r,i)=>Y[0].map((_,j)=>r.reduce((s,x,k)=>s+x*Y[k][j],0)));
+    out.innerHTML=`<p>Result is ${X.length}×${Y[0].length}. Pick an entry to see how it is built:</p><div id="mr">${show(R)}</div><div class="row">Row <select id="pi">${X.map((_,i)=>`<option>${i+1}</option>`)}</select> Column <select id="pj">${Y[0].map((_,j)=>`<option>${j+1}</option>`)}</select></div><div id="stp"></div>`;
+    const go2=()=>{const i=$("#pi").value-1,j=$("#pj").value-1;
+      $("#mr").innerHTML=show(R,(p,q)=>p==i&&q==j?"hl":"");
+      $("#stp").innerHTML=`<div class="step">c<sub>${i+1}${j+1}</sub> = row ${i+1} of A · column ${j+1} of B</div><div class="step">= ${X[i].map((x,k)=>`(${fmt(x)})(${fmt(Y[k][j])})`).join(" + ")}</div><div class="step">= ${fmt(R[i][j])}</div>`};
+    $("#pi").onchange=$("#pj").onchange=go2;go2()}}
+nav();home();
+</script></body></html>
